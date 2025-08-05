@@ -2,36 +2,64 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Мой HTML Редактор</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🛠 Онлайн HTML Редактор</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      color: #111;
+    :root {
+      --primary: #4f46e5;
+      --bg: #f3f4f6;
+      --white: #ffffff;
+      --border: #d1d5db;
     }
-    
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: #333;
+    }
+
     header {
-      background: #4f46e5;
-      color: #fff;
-      padding: 15px 20px;
+      background: var(--primary);
+      color: white;
+      padding: 20px;
       text-align: center;
     }
 
-    header h1 {
-      margin-bottom: 5px;
+    .mode-switcher {
+      text-align: center;
+      padding: 10px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mode-switcher button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      margin: 0 5px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .mode-switcher button:hover {
+      background: #3730a3;
     }
 
     .container {
       display: flex;
-      height: calc(100vh - 80px);
       flex-direction: row;
+      height: calc(100vh - 145px);
+    }
+
+    .editors, .preview {
+      flex: 1;
+      padding: 10px;
     }
 
     .editors {
-      flex: 1;
-      padding: 10px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -39,56 +67,63 @@
 
     textarea {
       width: 100%;
-      height: 33%;
-      resize: none;
+      height: 100%;
+      min-height: 100px;
+      resize: vertical;
       font-family: monospace;
-      font-size: 14px;
+      font-size: 15px;
       padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
     }
 
     .preview {
-      flex: 1;
-      border-left: 2px solid #e5e7eb;
-      background: #fff;
+      border-left: 2px solid var(--border);
+      background: var(--white);
     }
 
     iframe {
       width: 100%;
       height: 100%;
       border: none;
+      background: white;
     }
 
     @media (max-width: 768px) {
       .container {
         flex-direction: column;
-      }
-
-      .editors, .preview {
-        height: 50%;
-        width: 100%;
+        height: auto;
       }
 
       .preview {
         border-left: none;
-        border-top: 2px solid #e5e7eb;
+        border-top: 2px solid var(--border);
       }
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🛠 Онлайн HTML Редактор</h1>
-    <p>Редактируй и смотри результат в реальном времени</p>
+    <h1>🛠 Онлайн HTML/CSS/JS Редактор</h1>
+    <p>Выбери режим и пиши код</p>
   </header>
+
+  <div class="mode-switcher">
+    <button onclick="setMode('html')">🔤 Только HTML</button>
+    <button onclick="setMode('full')">🧩 HTML + CSS + JS</button>
+  </div>
 
   <div class="container">
     <div class="editors">
-      <textarea id="html" placeholder="HTML"></textarea>
-      <textarea id="css" placeholder="CSS"></textarea>
-      <textarea id="js" placeholder="JavaScript"></textarea>
+      <textarea id="html" placeholder="HTML код"><h1>Привет, мир!</h1></textarea>
+      <textarea id="css" placeholder="CSS код" class="full-input hidden">h1 { color: crimson; text-align: center; }</textarea>
+      <textarea id="js" placeholder="JavaScript код" class="full-input hidden">console.log("Добро пожаловать!");</textarea>
     </div>
     <div class="preview">
       <iframe id="output"></iframe>
@@ -99,27 +134,49 @@
     const htmlInput = document.getElementById("html");
     const cssInput = document.getElementById("css");
     const jsInput = document.getElementById("js");
-    const outputFrame = document.getElementById("output");
+    const output = document.getElementById("output");
+    const fullInputs = document.querySelectorAll(".full-input");
+
+    let mode = "html"; // или 'full'
 
     function updateOutput() {
-      const html = htmlInput.value;
-      const css = `<style>${cssInput.value}</style>`;
-      const js = `<script>${jsInput.value}<\/script>`;
-      const content = `${html}\n${css}\n${js}`;
-      outputFrame.srcdoc = content;
+      let html = htmlInput.value;
+      let css = cssInput.value;
+      let js = jsInput.value;
+
+      let fullContent = "";
+
+      if (mode === "html") {
+        fullContent = html;
+      } else {
+        fullContent = `
+          ${html}
+          <style>${css}</style>
+          <script>${js}<\/script>
+        `;
+      }
+
+      output.srcdoc = fullContent;
     }
 
     htmlInput.addEventListener("input", updateOutput);
     cssInput.addEventListener("input", updateOutput);
     jsInput.addEventListener("input", updateOutput);
 
-    // Начальные значения
-    htmlInput.value = "<h1>Привет, мир!</h1>";
-    cssInput.value = "h1 { color: crimson; text-align: center; }";
-    jsInput.value = "console.log('Редактор готов 🚀');";
+    // Переключение режима
+    function setMode(newMode) {
+      mode = newMode;
+      if (mode === "html") {
+        fullInputs.forEach(el => el.classList.add("hidden"));
+      } else {
+        fullInputs.forEach(el => el.classList.remove("hidden"));
+      }
+      updateOutput();
+    }
 
-    // Обновляем при загрузке
+    // Старт
     updateOutput();
   </script>
+
 </body>
 </html>
