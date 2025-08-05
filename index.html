@@ -1,118 +1,149 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🛠 Онлайн HTML Редактор</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔥 Онлайн HTML Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #4f46e5;
-      --bg: #f3f4f6;
-      --white: #ffffff;
-      --border: #d1d5db;
+      --bg: #1c1f26;
+      --panel: #2b2f3a;
+      --text: #f8f8f2;
+      --accent: #7c3aed;
+      --border: #3c4048;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
       background: var(--bg);
-      color: #333;
+      color: var(--text);
+      font-family: 'Fira Code', monospace;
     }
 
     header {
-      background: var(--primary);
-      color: white;
-      padding: 20px;
+      background: var(--panel);
+      padding: 15px 20px;
+      font-size: 20px;
       text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--border);
     }
 
     .mode-switcher {
+      background: var(--panel);
       text-align: center;
       padding: 10px;
-      background: white;
       border-bottom: 1px solid var(--border);
     }
 
     .mode-switcher button {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px 16px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
       margin: 0 5px;
       border-radius: 6px;
       cursor: pointer;
+      font-size: 14px;
       transition: 0.3s;
     }
 
     .mode-switcher button:hover {
-      background: #3730a3;
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
     }
 
     .container {
       display: flex;
-      flex-direction: row;
-      height: calc(100vh - 145px);
-    }
-
-    .editors, .preview {
-      flex: 1;
-      padding: 10px;
+      height: calc(100vh - 124px);
     }
 
     .editors {
+      flex: 1;
       display: flex;
       flex-direction: column;
+      padding: 10px;
       gap: 10px;
+      overflow-y: auto;
+      border-right: 2px solid var(--border);
+      background: var(--bg);
+    }
+
+    .editor-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-label {
+      font-size: 14px;
+      color: #9ca3af;
+      margin-bottom: 6px;
+      padding-left: 6px;
     }
 
     textarea {
       width: 100%;
-      height: 100%;
-      min-height: 100px;
+      height: 150px;
       resize: vertical;
-      font-family: monospace;
-      font-size: 15px;
-      padding: 10px;
+      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 6px;
-      background: white;
+      padding: 10px;
+      color: var(--text);
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
     }
 
     .preview {
-      border-left: 2px solid var(--border);
-      background: var(--white);
+      flex: 1;
+      background: #fff;
+      overflow: hidden;
     }
 
     iframe {
       width: 100%;
       height: 100%;
       border: none;
-      background: white;
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        flex-direction: column;
-        height: auto;
-      }
-
-      .preview {
-        border-left: none;
-        border-top: 2px solid var(--border);
-      }
     }
 
     .hidden {
       display: none;
     }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .editors {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .preview {
+        height: 300px;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>🛠 Онлайн HTML/CSS/JS Редактор</h1>
-    <p>Выбери режим и пиши код</p>
-  </header>
+  <header>🔥 Онлайн HTML/CSS/JS Редактор</header>
 
   <div class="mode-switcher">
     <button onclick="setMode('html')">🔤 Только HTML</button>
@@ -121,10 +152,22 @@
 
   <div class="container">
     <div class="editors">
-      <textarea id="html" placeholder="HTML код"><h1>Привет, мир!</h1></textarea>
-      <textarea id="css" placeholder="CSS код" class="full-input hidden">h1 { color: crimson; text-align: center; }</textarea>
-      <textarea id="js" placeholder="JavaScript код" class="full-input hidden">console.log("Добро пожаловать!");</textarea>
+      <div class="editor-block">
+        <div class="editor-label">HTML</div>
+        <textarea id="html"><h1>Привет, мир!</h1></textarea>
+      </div>
+
+      <div class="editor-block full-input hidden">
+        <div class="editor-label">CSS</div>
+        <textarea id="css">h1 { color: cyan; text-align: center; }</textarea>
+      </div>
+
+      <div class="editor-block full-input hidden">
+        <div class="editor-label">JavaScript</div>
+        <textarea id="js">console.log("Работает!"</textarea>
+      </div>
     </div>
+
     <div class="preview">
       <iframe id="output"></iframe>
     </div>
@@ -137,46 +180,47 @@
     const output = document.getElementById("output");
     const fullInputs = document.querySelectorAll(".full-input");
 
-    let mode = "html"; // или 'full'
+    let mode = "html";
 
-    function updateOutput() {
+    function updatePreview() {
       let html = htmlInput.value;
       let css = cssInput.value;
       let js = jsInput.value;
-
-      let fullContent = "";
+      let content = "";
 
       if (mode === "html") {
-        fullContent = html;
+        content = html;
       } else {
-        fullContent = `
+        content = `
           ${html}
           <style>${css}</style>
           <script>${js}<\/script>
         `;
       }
 
-      output.srcdoc = fullContent;
+      output.srcdoc = content;
     }
 
-    htmlInput.addEventListener("input", updateOutput);
-    cssInput.addEventListener("input", updateOutput);
-    jsInput.addEventListener("input", updateOutput);
-
-    // Переключение режима
+    // Переключение режимов
     function setMode(newMode) {
       mode = newMode;
-      if (mode === "html") {
-        fullInputs.forEach(el => el.classList.add("hidden"));
+
+      if (mode === 'html') {
+        fullInputs.forEach(el => el.classList.add('hidden'));
       } else {
-        fullInputs.forEach(el => el.classList.remove("hidden"));
+        fullInputs.forEach(el => el.classList.remove('hidden'));
       }
-      updateOutput();
+
+      updatePreview();
     }
 
-    // Старт
-    updateOutput();
-  </script>
+    // Обновляем на ввод
+    htmlInput.addEventListener('input', updatePreview);
+    cssInput.addEventListener('input', updatePreview);
+    jsInput.addEventListener('input', updatePreview);
 
+    // Инициализация
+    updatePreview();
+  </script>
 </body>
 </html>
