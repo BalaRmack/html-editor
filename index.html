@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мой HTML Редактор</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111;
+    }
+    
+    header {
+      background: #4f46e5;
+      color: #fff;
+      padding: 15px 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin-bottom: 5px;
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 80px);
+      flex-direction: row;
+    }
+
+    .editors {
+      flex: 1;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 33%;
+      resize: none;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .preview {
+      flex: 1;
+      border-left: 2px solid #e5e7eb;
+      background: #fff;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .editors, .preview {
+        height: 50%;
+        width: 100%;
+      }
+
+      .preview {
+        border-left: none;
+        border-top: 2px solid #e5e7eb;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🛠 Онлайн HTML Редактор</h1>
+    <p>Редактируй и смотри результат в реальном времени</p>
+  </header>
+
+  <div class="container">
+    <div class="editors">
+      <textarea id="html" placeholder="HTML"></textarea>
+      <textarea id="css" placeholder="CSS"></textarea>
+      <textarea id="js" placeholder="JavaScript"></textarea>
+    </div>
+    <div class="preview">
+      <iframe id="output"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const htmlInput = document.getElementById("html");
+    const cssInput = document.getElementById("css");
+    const jsInput = document.getElementById("js");
+    const outputFrame = document.getElementById("output");
+
+    function updateOutput() {
+      const html = htmlInput.value;
+      const css = `<style>${cssInput.value}</style>`;
+      const js = `<script>${jsInput.value}<\/script>`;
+      const content = `${html}\n${css}\n${js}`;
+      outputFrame.srcdoc = content;
+    }
+
+    htmlInput.addEventListener("input", updateOutput);
+    cssInput.addEventListener("input", updateOutput);
+    jsInput.addEventListener("input", updateOutput);
+
+    // Начальные значения
+    htmlInput.value = "<h1>Привет, мир!</h1>";
+    cssInput.value = "h1 { color: crimson; text-align: center; }";
+    jsInput.value = "console.log('Редактор готов 🚀');";
+
+    // Обновляем при загрузке
+    updateOutput();
+  </script>
+</body>
+</html>
