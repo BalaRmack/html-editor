@@ -6,102 +6,288 @@
 <title>Мой HTML редактор</title>
 <style>
   :root {
-    --bg: #0f1220;
-    --panel: #14182a;
-    --panel-2: #0f1323;
-    --muted: #9fb0d0;
-    --text: #e8ecff;
+    --bg: #0a0e1a;
+    --panel: #121728;
+    --panel-2: #0d1120;
+    --muted: #8895b8;
+    --text: #eef2ff;
     --accent: #6da8ff;
-    --border: #263055;
+    --accent-hover: #8dbbff;
+    --border: #1f2a4a;
+    --shadow: rgba(0, 0, 0, 0.4);
+    --glow: rgba(109, 168, 255, 0.15);
+    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   [data-theme="light"]{
-    --bg: #f4f7ff;
+    --bg: #f0f4ff;
     --panel: #ffffff;
-    --panel-2: #f0f3ff;
-    --muted: #55627a;
-    --text: #101426;
-    --accent: #2f6cf6;
-    --border: #d9e0ff;
+    --panel-2: #f5f8ff;
+    --muted: #64748b;
+    --text: #0f1420;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --border: #dbe4ff;
+    --shadow: rgba(0, 0, 0, 0.08);
+    --glow: rgba(59, 130, 246, 0.1);
   }
+  * { box-sizing: border-box; }
   html,body { height: 100%; }
   body {
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     display: grid;
     grid-template-rows: auto 1fr auto;
-    gap: 10px;
+    gap: 12px;
+    overflow: hidden;
   }
   header, footer {
-    padding: 10px;
+    padding: 12px 16px;
     background: var(--panel);
     border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(8px);
   }
-  header { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .brand { font-weight: 800; letter-spacing: .2px; margin-right: 10px; }
+  footer {
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+  }
+  header { 
+    display: flex; 
+    gap: 12px; 
+    align-items: center; 
+    flex-wrap: wrap;
+    box-shadow: 0 2px 8px var(--shadow);
+    z-index: 10;
+  }
+  .brand { 
+    font-weight: 800; 
+    letter-spacing: 0.3px; 
+    margin-right: 12px;
+    font-size: 18px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
   button, .btn {
     appearance: none;
     border: 1px solid var(--border);
-    background: var(--panel-2);
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
     color: var(--text);
-    padding: 8px 12px;
+    padding: 8px 14px;
     border-radius: 10px;
-    font-weight: 700;
+    font-weight: 600;
+    font-size: 13px;
     cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
   }
-  button:hover { filter: brightness(1.06); }
-  .ghost { background: transparent; }
+  button::before, .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent);
+    opacity: 0;
+    transition: opacity var(--transition);
+  }
+  button:hover, .btn:hover { 
+    filter: brightness(1.08);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow), 0 0 20px var(--glow);
+  }
+  button:hover::before, .btn:hover::before {
+    opacity: 1;
+  }
+  button:active, .btn:active {
+    transform: translateY(0);
+  }
+  .ghost { 
+    background: transparent;
+    border-color: transparent;
+  }
+  .ghost:hover {
+    background: var(--panel-2);
+    border-color: var(--border);
+  }
   .split {
     display: grid;
-    gap: 10px;
+    gap: 12px;
     grid-template-columns: 1fr 1fr;
-    padding: 0 10px 10px;
-    min-height: 0; /* чтобы высота распределялась */
+    padding: 0 12px 12px;
+    min-height: 0;
   }
   .col {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     display: grid;
     grid-template-rows: auto 1fr;
     min-height: 0;
+    overflow: hidden;
+    box-shadow: 0 4px 16px var(--shadow);
+    transition: box-shadow var(--transition);
+  }
+  .col:focus-within {
+    box-shadow: 0 4px 20px var(--shadow), 0 0 30px var(--glow);
   }
   .tabs {
-    display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--border);
+    display: flex; 
+    gap: 6px; 
+    padding: 10px; 
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
   }
   .tab {
-    padding: 6px 10px; border-radius: 8px; cursor: pointer;
-    background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
-    font-weight: 700;
+    padding: 7px 14px; 
+    border-radius: 9px; 
+    cursor: pointer;
+    background: transparent; 
+    border: 1px solid transparent;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 13px;
+    transition: all var(--transition);
+    position: relative;
   }
-  .tab.active { color: var(--text); background: rgba(109,168,255,.12); border-color: #385aa7; }
-  .editors { position: relative; min-height: 0; }
+  .tab::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: all var(--transition);
+    transform: translateX(-50%);
+  }
+  .tab:hover { 
+    color: var(--text);
+    background: rgba(109,168,255,0.06);
+  }
+  .tab.active { 
+    color: var(--accent); 
+    background: rgba(109,168,255,0.1);
+    border-color: rgba(109,168,255,0.3);
+  }
+  .tab.active::after {
+    width: 60%;
+    bottom: -11px;
+  }
+  .editors { 
+    position: relative; 
+    min-height: 0; 
+    background: var(--panel);
+  }
   .editor {
-    position: absolute; inset: 0;
-    margin: 0; padding: 10px 12px;
-    width: 100%; height: 100%;
-    resize: none; outline: none; border: none;
-    background: transparent; color: var(--text);
-    font: 13px/1.4 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    position: absolute; 
+    inset: 0;
+    margin: 0; 
+    padding: 14px 16px;
+    width: 100%; 
+    height: 100%;
+    resize: none; 
+    outline: none; 
+    border: none;
+    background: transparent; 
+    color: var(--text);
+    font: 13px/1.5 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     tab-size: 2;
     white-space: pre;
     overflow: auto;
+    scroll-behavior: smooth;
+    opacity: 0;
+    animation: fadeIn 0.25s ease forwards;
   }
-  .editor.hidden { display: none; }
-  .toolbar { display: flex; gap: 8px; align-items: center; }
-  .toolbar .sep { width: 1px; height: 28px; background: var(--border); }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .editor.hidden { 
+    display: none; 
+    opacity: 0;
+  }
+  .toolbar { 
+    display: flex; 
+    gap: 8px; 
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toolbar .sep { 
+    width: 1px; 
+    height: 24px; 
+    background: var(--border);
+    margin: 0 4px;
+  }
   iframe {
-    width: 100%; height: 100%; border: 0; background: white; border-radius: 0 0 12px 12px;
+    width: 100%; 
+    height: 100%; 
+    border: 0; 
+    background: white; 
+    border-radius: 0 0 12px 12px;
   }
-  .panel-title { padding: 8px; font-weight: 800; border-bottom: 1px solid var(--border); }
+  .panel-title { 
+    padding: 10px 14px; 
+    font-weight: 700; 
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+  }
   footer {
-    display: flex; gap: 12px; align-items: center; justify-content: space-between;
-    border-top: 1px solid var(--border);
+    display: flex; 
+    gap: 12px; 
+    align-items: center; 
+    justify-content: space-between;
+    font-size: 12px;
   }
-  .muted { color: var(--muted); }
+  .muted { 
+    color: var(--muted);
+    transition: opacity var(--transition);
+  }
+  #status {
+    font-weight: 600;
+    color: var(--accent);
+  }
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--panel-2);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+    transition: background var(--transition);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+  /* Checkbox styling */
+  input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
   @media (max-width: 960px) {
-    .split { grid-template-columns: 1fr; }
+    .split { 
+      grid-template-columns: 1fr; 
+      grid-template-rows: 1fr 1fr;
+    }
+    body {
+      gap: 8px;
+    }
+    header, footer {
+      padding: 10px 12px;
+    }
   }
 </style>
 </head>
@@ -189,25 +375,47 @@ console.log('Привет из редактора!');`
     document.documentElement.setAttribute('data-theme', mode);
     localStorage.setItem(THEME_KEY, mode);
   }
+  
   const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
   setTheme(savedTheme);
-  els.theme.textContent = savedTheme === 'dark' ? 'Светлая' : 'Тёмная';
+  
+  function updateThemeButton(theme) {
+    els.theme.textContent = theme === 'dark' ? '🌞 Светлая' : '🌙 Тёмная';
+  }
+  
+  updateThemeButton(savedTheme);
+  
   els.theme.addEventListener('click', () => {
     const cur = document.documentElement.getAttribute('data-theme') || 'dark';
     const next = cur === 'dark' ? 'light' : 'dark';
     setTheme(next);
-    els.theme.textContent = next === 'dark' ? 'Светлая' : 'Тёмная';
+    updateThemeButton(next);
   });
 
   // Вкладки
+  let activeTab = 'html';
   els.tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       els.tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      const k = tab.dataset.tab;
+      activeTab = tab.dataset.tab;
       document.querySelectorAll('.editor').forEach(ed => ed.classList.add('hidden'));
-      document.getElementById('ed-' + k).classList.remove('hidden');
-      document.getElementById('ed-' + k).focus();
+      const editor = document.getElementById('ed-' + activeTab);
+      editor.classList.remove('hidden');
+      editor.focus();
+    });
+  });
+
+  // Поддержка Tab в textarea
+  [els.html, els.css, els.js].forEach(ed => {
+    ed.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = ed.selectionStart;
+        const end = ed.selectionEnd;
+        ed.value = ed.value.substring(0, start) + '  ' + ed.value.substring(end);
+        ed.selectionStart = ed.selectionEnd = start + 2;
+      }
     });
   });
 
@@ -219,28 +427,39 @@ console.log('Привет из редактора!');`
       js: els.js.value,
       ts: Date.now(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    setStatus('Сохранено');
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      setStatus('✓ Сохранено');
+    } catch (err) {
+      console.error('Ошибка сохранения:', err);
+      setStatus('⚠ Ошибка сохранения');
+    }
   }
   function loadLS() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) throw 0;
+      if (!raw) return false;
       const v = JSON.parse(raw);
-      if (typeof v.html !== 'string') throw 0;
-      els.html.value = v.html;
-      els.css.value = v.css || '';
-      els.js.value = v.js || '';
+      if (typeof v.html !== 'string') return false;
+      els.html.value = v.html ?? '';
+      els.css.value = v.css ?? '';
+      els.js.value = v.js ?? '';
       return true;
-    } catch { return false; }
+    } catch (err) {
+      console.error('Ошибка загрузки:', err);
+      return false;
+    }
   }
 
   // Статус
-  let statusTimer = 0;
+  let statusTimer = null;
   function setStatus(text) {
     els.status.textContent = text;
-    clearTimeout(statusTimer);
-    statusTimer = setTimeout(() => els.status.textContent = '', 1400);
+    els.status.style.opacity = '1';
+    if (statusTimer) clearTimeout(statusTimer);
+    statusTimer = setTimeout(() => {
+      els.status.style.opacity = '0';
+    }, 1800);
   }
 
   // Предпросмотр
@@ -264,8 +483,13 @@ ${html}
     return doc;
   }
   function render() {
-    els.iframe.srcdoc = buildDoc();
-    setStatus(els.live.checked ? 'Live обновлён' : 'Обновлено');
+    try {
+      els.iframe.srcdoc = buildDoc();
+      setStatus(els.live.checked ? '✓ Live обновлён' : '✓ Обновлено');
+    } catch (err) {
+      console.error('Ошибка рендера:', err);
+      setStatus('⚠ Ошибка рендера');
+    }
   }
   function debounce(fn, ms=300) {
     let t; return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
@@ -303,30 +527,54 @@ ${html}
 
   // Скачать
   els.download.addEventListener('click', () => {
-    const blob = new Blob([buildDoc()], { type: 'text/html;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'index.html';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setStatus('Скачано');
+    try {
+      const blob = new Blob([buildDoc()], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus('✓ Скачано');
+    } catch (err) {
+      console.error('Ошибка скачивания:', err);
+      setStatus('⚠ Ошибка скачивания');
+    }
   });
 
   // Новый
   els.create.addEventListener('click', () => {
-    if (!confirm('Очистить редактор?')) return;
+    if (!confirm('Очистить редактор? Все несохранённые изменения будут потеряны.')) return;
     els.html.value = defaults.html;
     els.css.value = defaults.css;
     els.js.value = defaults.js;
+    document.querySelector('[data-tab="html"]').click();
     saveLS();
     render();
+    setStatus('✓ Создан новый проект');
   });
 
   // Сброс LS
   els.clear.addEventListener('click', () => {
     localStorage.removeItem(STORAGE_KEY);
-    setStatus('localStorage очищен');
+    setStatus('✓ localStorage очищен');
+  });
+
+  // Горячие клавиши
+  document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + S для сохранения
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      saveLS();
+      render();
+    }
+    // Ctrl/Cmd + Enter для запуска
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      render();
+    }
   });
 
   // Инициализация
@@ -335,7 +583,12 @@ ${html}
     els.css.value  = defaults.css;
     els.js.value   = defaults.js;
   }
+  
+  // Переключаемся на активную вкладку
+  document.querySelector(`[data-tab="${activeTab}"]`).click();
+  
   render();
+  setStatus('Готов к работе');
 })();
 </script>
 </body>
