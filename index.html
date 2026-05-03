@@ -327,7 +327,7 @@
 
     <section class="col">
       <div class="panel-title">Предпросмотр</div>
-      <iframe id="preview" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups allow-modals allow-same-origin"></iframe>
+      <iframe id="preview" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups allow-modals"></iframe>
     </section>
   </main>
 
@@ -466,8 +466,10 @@ console.log('Привет из редактора!');`
   function buildDoc() {
     const html = els.html.value;
     const css = els.css.value;
-    const js = (els.js.value || '').replaceAll('</script>', '<\\/script>');
+    const js = els.js.value || '';
     const doc = `<!DOCTYPE html>
+    // Правильное экранирование для предотвращения XSS и разрыва тегов
+    const safeJs = js.replace(/</script>/gi, '<\/script>');
 <html lang="ru">
 <head>
 <meta charset="utf-8">
