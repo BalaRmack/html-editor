@@ -59,8 +59,9 @@ public sealed class DictationController : IAsyncDisposable
             {
                 await _engine.EnsureLoadedAsync(model, cts.Token).ConfigureAwait(false);
                 var (capture, device, name) = _microphones.CreateCapture(settings.InputDeviceId);
-                _session = new MicrophoneCaptureSession(capture, device, name);
-                var session = new DictationSession(_session, _engine, settings);
+                var microphone = new MicrophoneCaptureSession(capture, device, name);
+                var session = new DictationSession(microphone, _engine, settings);
+                _session = session;
                 session.Level += (_, value) => Level?.Invoke(this, value);
                 session.TextChanged += (_, value) => LiveTextChanged?.Invoke(this, value);
                 session.Faulted += (_, ex) => ReportError(ex, "Capture/recognition");

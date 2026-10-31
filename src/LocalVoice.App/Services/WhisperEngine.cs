@@ -42,7 +42,7 @@ public sealed class WhisperEngine : IAsyncDisposable
             .WithNoContext().WithNoSpeechThreshold(0.6f)
             .WithTemperature(0).WithTemperatureInc(0)
             .WithProbabilities().WithMaxSegmentLength(240)
-            .WithGreedySamplingStrategy().WithBestOf(1).ParentBuilder.Build();
+            .WithGreedySamplingStrategy().ParentBuilder.Build();
     }
     public async Task<string> TranscribeAsync(WhisperProcessor processor, float[] pcm, CancellationToken ct)
     {

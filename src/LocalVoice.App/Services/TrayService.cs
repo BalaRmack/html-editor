@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Windows;
+using Application = System.Windows.Application;
 using LocalVoice.App.ViewModels;
 using WinForms = System.Windows.Forms;
 namespace LocalVoice.App.Services;

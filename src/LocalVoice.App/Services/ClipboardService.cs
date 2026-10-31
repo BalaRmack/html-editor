@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Windows;
+using Application = System.Windows.Application;
 namespace LocalVoice.App.Services;
 
 public sealed class ClipboardService

@@ -1,9 +1,11 @@
 using System.Windows;
+using Application = System.Windows.Application;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using LocalVoice.App.Platform;
 using LocalVoice.Core;
+using LocalVoice.App.Services;
 namespace LocalVoice.App.Views;
 
 public partial class OverlayWindow : Window

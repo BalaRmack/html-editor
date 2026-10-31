@@ -1,6 +1,5 @@
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using NAudio.CoreAudioApi;
 using LocalVoice.Core;
 namespace LocalVoice.App.Services;
 
