@@ -26,7 +26,7 @@ public sealed class DictationController : IAsyncDisposable
     public event EventHandler<TranscriptEntry>? Completed;
     public event EventHandler? SessionStarting;
     public event EventHandler? SessionStopping;
-    public DictationController(SettingsStore settings, ModelManager models, WhisperEngine engine, MicrophoneService microphones, IAppLog log)
+    public DictationController(WhisperEngine engine, ModelManager models, MicrophoneService microphones, SettingsStore settings, IAppLog log)
     { _settings = settings; _models = models; _engine = engine; _microphones = microphones; _log = log; }
     public void RememberTarget(IntPtr hwnd) { if (hwnd != IntPtr.Zero) Target = hwnd; }
     public Task ToggleAsync() => State == DictationState.Idle ? StartAsync() : StopAsync();
