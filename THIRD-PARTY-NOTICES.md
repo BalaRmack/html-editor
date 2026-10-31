@@ -29,3 +29,18 @@ Inno Setup is a build-time tool, not a paid application dependency. Its installe
 stub has its own permissive license; see the version installed on the build host.
 No proprietary speech SDK, cloud subscription, Python runtime or browser runtime
 is required.
+
+
+## CI speech samples
+
+The headless speech smoke test uses two short TTS WAV samples from
+[`vyorkin/voxtype-gigaam`](https://github.com/vyorkin/voxtype-gigaam), pinned to commit
+`77365e79a3f4e86b42ccf0dec0f8e56e80633da9` (MIT). They are downloaded only in CI,
+are not included in the application installer or portable package, and are not
+part of the runtime application.
+
+## Inno Setup
+
+The Windows installer is compiled with Inno Setup 6. Inno Setup is free software;
+see https://jrsoftware.org/isinfo.php for its license. The compiler itself is not
+redistributed with LocalVoice.

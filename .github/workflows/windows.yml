@@ -89,6 +89,21 @@ jobs:
       - name: Compile per-user installer
         shell: pwsh
         run: ./scripts/build.ps1 -Task installer
+      - name: Smoke install and uninstall (per-user, silent)
+        shell: pwsh
+        run: |
+          $setup = 'artifacts/installer/LocalVoice-1.0.0-win-x64-setup.exe'
+          $dir = Join-Path $env:RUNNER_TEMP 'LocalVoiceInstall'
+          $p = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=$dir" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Installer exit code $($p.ExitCode)" }
+          if (-not (Test-Path (Join-Path $dir 'LocalVoice.exe'))) { throw 'Installed exe missing' }
+          if (-not (Test-Path (Join-Path $dir 'whisper.dll'))) { throw 'Installed native runtime missing' }
+          $unins = Join-Path $dir 'unins000.exe'
+          if (-not (Test-Path $unins)) { throw 'Uninstaller missing' }
+          Start-Process -FilePath $unins -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          $deadline = (Get-Date).AddSeconds(30)
+          while ((Test-Path (Join-Path $dir 'LocalVoice.exe')) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
+          if (Test-Path (Join-Path $dir 'LocalVoice.exe')) { throw 'Uninstall did not remove exe' }
       - name: Verify self-contained layout
         shell: pwsh
         run: |
@@ -112,7 +127,9 @@ jobs:
           retention-days: 14
       - name: Package portable zip
         shell: pwsh
-        run: Compress-Archive -Path artifacts/publish/win-x64/* -DestinationPath artifacts/LocalVoice-1.0.0-win-x64-portable.zip -Force
+        run: |
+          Compress-Archive -Path artifacts/publish/win-x64/* -DestinationPath artifacts/LocalVoice-1.0.0-win-x64-portable.zip -Force
+          Get-FileHash artifacts/LocalVoice-1.0.0-win-x64-portable.zip -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLowerInvariant())  LocalVoice-1.0.0-win-x64-portable.zip" } | Set-Content -Encoding ascii artifacts/LocalVoice-1.0.0-win-x64-portable.zip.sha256
       - name: Publish GitHub Release assets
         shell: pwsh
         env:
@@ -127,4 +144,5 @@ jobs:
           gh release upload $tag --repo $env:GITHUB_REPOSITORY --clobber `
             artifacts/installer/LocalVoice-1.0.0-win-x64-setup.exe `
             artifacts/installer/LocalVoice-1.0.0-win-x64-setup.exe.sha256 `
-            artifacts/LocalVoice-1.0.0-win-x64-portable.zip
+            artifacts/LocalVoice-1.0.0-win-x64-portable.zip `
+            artifacts/LocalVoice-1.0.0-win-x64-portable.zip.sha256
