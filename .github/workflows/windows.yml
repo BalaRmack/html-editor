@@ -1,0 +1,53 @@
+name: Windows build and installer
+on:
+  push:
+    branches: ['arena/e21a0934-html-editor', main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '8.0.4xx'
+      - name: Restore, build, test and publish
+        shell: pwsh
+        run: ./scripts/build.ps1 -Task all -SkipInstaller
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe'
+          $file = Join-Path $env:RUNNER_TEMP 'innosetup-6.7.4.exe'
+          Invoke-WebRequest -Uri $url -OutFile $file
+          $expected = 'A549929319F9120716677C685535CA4671E4B937B5FDC87E2585F32D8EB30E8C'
+          if ((Get-FileHash $file).Hash -ne $expected) { throw 'Inno Setup hash mismatch' }
+          Start-Process -FilePath $file -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -Wait
+      - name: Compile per-user installer
+        shell: pwsh
+        run: ./scripts/build.ps1 -Task installer
+      - name: Verify self-contained layout
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem artifacts/publish/win-x64 -Recurse -File
+          if (-not ($files.Name -contains 'coreclr.dll')) { throw '.NET runtime missing' }
+          if (-not ($files.Name -contains 'whisper.dll')) { throw 'Whisper native runtime missing' }
+          if ($files.Name -contains 'webview2loader.dll') { throw 'Unexpected browser runtime' }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: LocalVoice-win-x64
+          path: |
+            artifacts/installer/*.exe
+            artifacts/installer/*.sha256
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: LocalVoice-portable-win-x64
+          path: artifacts/publish/win-x64
+          if-no-files-found: error
+          retention-days: 14
