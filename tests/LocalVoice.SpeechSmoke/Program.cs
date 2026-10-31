@@ -47,6 +47,12 @@ try
     }
     Console.WriteLine("SPEECH SMOKE PASSED");
 }
+catch (Exception ex)
+{
+    results.Add(new { error = ex.ToString() });
+    Console.Error.WriteLine(ex);
+    throw;
+}
 finally
 {
     await engine.DisposeAsync();

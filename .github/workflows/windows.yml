@@ -62,7 +62,15 @@ jobs:
             if ((Get-FileHash $file).Hash -ne $samples[$name]) { throw "Sample hash mismatch: $name" }
           }
           dotnet run --project tests/LocalVoice.SpeechSmoke -c Release --no-build -- --audio-dir artifacts/speech --data-dir artifacts/speech-data
-          if ($LASTEXITCODE -ne 0) { throw 'Speech smoke test failed' }
+          if ($LASTEXITCODE -ne 0) {
+            $report = 'artifacts/speech-data/speech-smoke.json'
+            if (Test-Path $report) {
+              $text = Get-Content $report -Raw
+              Write-Host $text
+              Write-Host "::error::Speech smoke failed: $($text -replace "`r",'' -replace "`n",' ')"
+            }
+            throw 'Speech smoke test failed'
+          }
       - name: Upload speech report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
