@@ -77,7 +77,7 @@ begin
   begin
     RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'LocalVoice');
     DataDir := ExpandConstant('{localappdata}\LocalVoice');
-    if DirExists(DataDir) then
+    if DirExists(DataDir) and not UninstallSilent then
       if MsgBox('Удалить также настройки, историю и скачанные модели?' + #13#10 +
                 'Нет — сохранить их для следующей установки.' + #13#10 + #13#10 +
                 'Also delete settings, transcript history and downloaded models?',

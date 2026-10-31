@@ -12,12 +12,18 @@ public sealed class FileLog : IAppLog, IAsyncDisposable
     {
         DirectoryPath = directory;
         Directory.CreateDirectory(directory);
+        foreach (var old in Directory.EnumerateFiles(directory, "localvoice-*.log"))
+            try { if (File.GetLastWriteTimeUtc(old) < DateTime.UtcNow.AddDays(-7)) File.Delete(old); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         _writer = WriteLoopAsync();
     }
     public void Info(string message) => Write("INFO", message);
     public void Error(string context, Exception exception) => Write("ERROR", $"{context}: {exception.GetType().Name}: {Sanitize(exception.Message)}");
     private void Write(string level, string message) => _channel.Writer.TryWrite($"{DateTimeOffset.UtcNow:O} [{level}] {Sanitize(message)}");
-    private static string Sanitize(string text) => text.ReplaceLineEndings(" ")[..Math.Min(text.ReplaceLineEndings(" ").Length, 1600)];
+    private static string Sanitize(string text)
+    {
+        var flat = text.ReplaceLineEndings(" ");
+        return flat[..Math.Min(flat.Length, 1600)];
+    }
     private async Task WriteLoopAsync()
     {
         try

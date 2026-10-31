@@ -229,7 +229,7 @@ public sealed partial class MainViewModel : ObservableObject
             catch { Hotkeys.Configure(LocalVoice.App.Platform.HotkeyParser.Parse(previous.Hotkey)); _startup.SetEnabled(previous.StartWithWindows); throw; }
             _themes.Apply(next.Theme);
             OnPropertyChanged(nameof(SettingsStore));
-            if (!next.SaveHistory) await History.AddAsync(new(Guid.NewGuid(), DateTimeOffset.MinValue, " ", "", "", 0), false, next.HistoryLimit);
+            if (previous.SaveHistory && !next.SaveHistory) await History.ClearAsync();
             Settings.Load(); RefreshState(); OnPropertyChanged(nameof(HotkeySummary)); OnPropertyChanged(nameof(LanguageSummary)); OnPropertyChanged(nameof(ModeHint));
             Notice = "Настройки сохранены."; HasError = false;
         }

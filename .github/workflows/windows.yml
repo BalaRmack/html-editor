@@ -5,7 +5,7 @@ on:
   pull_request:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: windows-latest
@@ -45,6 +45,38 @@ jobs:
       - name: Publish
         shell: pwsh
         run: ./scripts/build.ps1 -Task publish -Version 1.0.0
+      - name: Speech smoke test (RU / EN / auto)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts/speech | Out-Null
+          $base = 'https://raw.githubusercontent.com/vyorkin/voxtype-gigaam/77365e79a3f4e86b42ccf0dec0f8e56e80633da9/samples'
+          $samples = @{
+            'ru_sample.wav' = '758D148B29204E6F956A62F6CF608B848C9C60FBAA10CC9251A4F76E3DB7E1D8'
+            'en_sample.wav' = '29287F68668278AF5249C72E6C5E42B944E2CDA0BD6AB0D0AD79F16B56A02308'
+          }
+          foreach ($name in $samples.Keys) {
+            $file = Join-Path 'artifacts/speech' $name
+            Invoke-WebRequest -Uri "$base/$name" -OutFile $file
+            if ((Get-FileHash $file).Hash -ne $samples[$name]) { throw "Sample hash mismatch: $name" }
+          }
+          dotnet run --project tests/LocalVoice.SpeechSmoke -c Release --no-build -- --audio-dir artifacts/speech --data-dir artifacts/speech-data
+          if ($LASTEXITCODE -ne 0) { throw 'Speech smoke test failed' }
+      - name: Upload speech report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: speech-smoke-report
+          path: artifacts/speech-data/speech-smoke.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload NuGet lock files
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nuget-lockfiles
+          path: '**/packages.lock.json'
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Install Inno Setup
         shell: pwsh
         run: |
@@ -78,3 +110,21 @@ jobs:
           path: artifacts/publish/win-x64
           if-no-files-found: error
           retention-days: 14
+      - name: Package portable zip
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/publish/win-x64/* -DestinationPath artifacts/LocalVoice-1.0.0-win-x64-portable.zip -Force
+      - name: Publish GitHub Release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = 'v1.0.0'
+          $notes = 'LocalVoice 1.0.0 — Windows 10/11 x64, self-contained, per-user installer. Model weights are not included; download them in the app. See README and THIRD-PARTY-NOTICES.'
+          gh release view $tag --repo $env:GITHUB_REPOSITORY 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'LocalVoice 1.0.0' --notes $notes
+          }
+          gh release upload $tag --repo $env:GITHUB_REPOSITORY --clobber `
+            artifacts/installer/LocalVoice-1.0.0-win-x64-setup.exe `
+            artifacts/installer/LocalVoice-1.0.0-win-x64-setup.exe.sha256 `
+            artifacts/LocalVoice-1.0.0-win-x64-portable.zip

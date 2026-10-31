@@ -8,12 +8,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalVoice.App", "src\Local
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalVoice.Core.Tests", "tests\LocalVoice.Core.Tests\LocalVoice.Core.Tests.csproj", "{A8A4A7C0-6D6A-4E2F-9E9A-6D7B10200003}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalVoice.SpeechSmoke", "tests\LocalVoice.SpeechSmoke\LocalVoice.SpeechSmoke.csproj", "{D4E5F6A7-B8C9-4D0E-A1F2-3456789ABCDEF}"
+EndProject
 Global
  GlobalSection(SolutionConfigurationPlatforms) = preSolution
   Debug|Any CPU = Debug|Any CPU
   Release|Any CPU = Release|Any CPU
  EndGlobalSection
  GlobalSection(ProjectConfigurationPlatforms) = postSolution
+  {D4E5F6A7-B8C9-4D0E-A1F2-3456789ABCDEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {D4E5F6A7-B8C9-4D0E-A1F2-3456789ABCDEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {D4E5F6A7-B8C9-4D0E-A1F2-3456789ABCDEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {D4E5F6A7-B8C9-4D0E-A1F2-3456789ABCDEF}.Release|Any CPU.Build.0 = Release|Any CPU
   {A8A4A7C0-6D6A-4E2F-9E9A-6D7B10200001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
   {A8A4A7C0-6D6A-4E2F-9E9A-6D7B10200001}.Debug|Any CPU.Build.0 = Debug|Any CPU
   {A8A4A7C0-6D6A-4E2F-9E9A-6D7B10200001}.Release|Any CPU.ActiveCfg = Release|Any CPU

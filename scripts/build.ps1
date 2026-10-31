@@ -51,6 +51,7 @@ if ($Task -in @('publish','all')) {
     if (-not (Test-Path -LiteralPath $exe)) { throw "Publish did not create $exe" }
     $native = Get-ChildItem -LiteralPath $publish -Recurse -File | Where-Object { $_.Name -eq 'whisper.dll' }
     if (-not $native) { throw 'The native whisper.dll runtime is missing from publish output.' }
+    & (Join-Path $PSScriptRoot 'collect-licenses.ps1') -PublishDir $publish
     Get-FileHash -Algorithm SHA256 -LiteralPath $exe | ForEach-Object { "$($_.Hash.ToLowerInvariant())  LocalVoice.exe" } | Set-Content -Encoding ascii (Join-Path $publish 'LocalVoice.exe.sha256')
     Write-Host "Published: $exe"
 }

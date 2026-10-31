@@ -40,7 +40,9 @@ public partial class MainWindow : Window
     private void OnClosing(object? sender, CancelEventArgs e)
     {
         if (_allowClose) { AppServices.Current.Themes.Changed -= OnThemeChanged; return; }
-        e.Cancel = true; Hide();
+        e.Cancel = true;
+        (DataContext as MainViewModel)?.CancelHotkeyCapture();
+        Hide();
     }
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {

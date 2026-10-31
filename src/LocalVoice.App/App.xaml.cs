@@ -91,7 +91,14 @@ public partial class App : Application
         if (_main.WindowState == WindowState.Minimized) _main.WindowState = WindowState.Normal;
         _main.Activate();
     }
-    public void PrepareOverlayExport() => ShowMain("Integrations");
+    public void PrepareOverlayExport()
+    {
+        if (_services is null) return;
+        var providers = _services.ExportProviders.ConnectedRemote.ToArray();
+        if (providers.Length == 1 && !string.IsNullOrWhiteSpace(_services.ViewModel.LastText))
+            _services.ViewModel.ExportToCommand.Execute(providers[0]);
+        else ShowMain("Integrations");
+    }
     private void ExitApplication()
     {
         if (_exiting) return;

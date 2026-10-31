@@ -58,7 +58,7 @@ public sealed class UtteranceAccumulator
     public float[] TakeFinal(bool force = false)
     {
         var result = _voicedSeconds >= (force ? 0.10 : 0.18) ? Snapshot() : [];
-        var overlap = force ? Array.Empty<float>() : _audio.Skip(Math.Max(0, _audio.Count - 3200)).ToArray();
+        var overlap = _audio.Skip(Math.Max(0, _audio.Count - 3200)).ToArray();
         _audio.Clear(); _silenceSeconds = _voicedSeconds = _sincePartial = 0; _active = false; IsSpeaking = false;
         _preRoll.Clear(); _preRollSeconds = 0;
         if (overlap.Length > 0) { _preRoll.Enqueue(new AudioFrame(overlap, AudioFrame.ComputeRms(overlap))); _preRollSeconds = 0.2; }
