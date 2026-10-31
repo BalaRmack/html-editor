@@ -49,6 +49,7 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsBusy => Controller.State != DictationState.Idle;
     public bool IsListening => Controller.State == DictationState.Listening;
     public bool IsTesting => Controller.IsTesting;
+    public bool ControllerBusy => IsBusy;
     public bool CanEdit => !IsBusy && !IsTesting;
     public bool HasText => !string.IsNullOrWhiteSpace(LastText);
     public bool HasLiveText => !string.IsNullOrWhiteSpace(LiveText);
@@ -116,6 +117,7 @@ public sealed partial class MainViewModel : ObservableObject
         ModelStorageText = $"{ModelDescriptor.FormatSize(Models.InstalledBytes)} на диске";
         OnPropertyChanged(nameof(ModelSummary));
     }
+    [RelayCommand]
     public void Navigate(string tab) { SelectedTab = tab; if (tab == "Settings") Settings.RefreshDevices(); if (tab == "History") _ = RefreshHistoryAsync(); }
     [RelayCommand] private void RefreshModelStatuses() => RefreshModels();
     [RelayCommand] private void OpenSettings() => Navigate("Settings");
@@ -225,6 +227,7 @@ public sealed partial class MainViewModel : ObservableObject
             try { await SettingsStore.SaveAsync(next); }
             catch { Hotkeys.Configure(LocalVoice.App.Platform.HotkeyParser.Parse(previous.Hotkey)); _startup.SetEnabled(previous.StartWithWindows); throw; }
             _themes.Apply(next.Theme);
+            OnPropertyChanged(nameof(SettingsStore));
             if (!next.SaveHistory) await History.AddAsync(new(Guid.NewGuid(), DateTimeOffset.MinValue, " ", "", "", 0), false, next.HistoryLimit);
             Settings.Load(); RefreshState(); OnPropertyChanged(nameof(HotkeySummary)); OnPropertyChanged(nameof(LanguageSummary)); OnPropertyChanged(nameof(ModeHint));
             Notice = "Настройки сохранены."; HasError = false;

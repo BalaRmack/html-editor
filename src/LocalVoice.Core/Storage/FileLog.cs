@@ -22,7 +22,7 @@ public sealed class FileLog : IAppLog, IAsyncDisposable
     {
         try
         {
-            await foreach (var line in _channel.Writer.ReadAllAsync(_cts.Token))
+            await foreach (var line in _channel.Reader.ReadAllAsync(_cts.Token))
             {
                 var path = Path.Combine(DirectoryPath, $"localvoice-{DateTime.UtcNow:yyyyMMdd}.log");
                 if (File.Exists(path) && new FileInfo(path).Length > 2_000_000) continue;
