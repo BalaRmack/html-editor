@@ -1,5 +1,6 @@
 param([Parameter(Mandatory=$true)][string]$PublishDir)
 $ErrorActionPreference = 'Stop'
+trap { throw "collect-licenses failed near line $($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)" }
 $root = Split-Path $PSScriptRoot -Parent
 $assets = Join-Path $root 'src/LocalVoice.App/obj/project.assets.json'
 if (-not (Test-Path $assets)) { throw 'Restore the app before collecting licenses.' }
@@ -17,7 +18,7 @@ foreach ($lib in $json.libraries.PSObject.Properties) {
     $id = $parts[0]; $version = $parts[1]
     $pkg = Join-Path $cache (Join-Path $id.ToLowerInvariant() $version)
     if (-not (Test-Path $pkg)) { Write-Host "Skip missing package folder: $pkg"; continue }
-    $files = Get-ChildItem $pkg -File | Where-Object { $_.Name -match '^(license|licence|copying|notice|third-party)' }
+    $files = @(Get-ChildItem $pkg -File | Where-Object { $_.Name -match '^(license|licence|copying|notice|third-party)' })
     if ($files.Count -eq 0) {
         $nuspec = Get-ChildItem $pkg -Filter *.nuspec -File | Select-Object -First 1
         if ($nuspec) { $files = @($nuspec) }
