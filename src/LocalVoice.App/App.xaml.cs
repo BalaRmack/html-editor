@@ -86,6 +86,9 @@ public partial class App : Application
             _main = new MainWindow { DataContext = _services.ViewModel };
             _main.Closed += (_, _) => _main = null;
         }
+        var foreground = NativeMethods.GetForegroundWindow();
+        var own = new WindowInteropHelper(_main).Handle;
+        if (foreground != IntPtr.Zero && foreground != own) _services.Controller.RememberTarget(foreground);
         _services.ViewModel.Navigate(tab);
         if (!_main.IsVisible) _main.Show();
         if (_main.WindowState == WindowState.Minimized) _main.WindowState = WindowState.Normal;

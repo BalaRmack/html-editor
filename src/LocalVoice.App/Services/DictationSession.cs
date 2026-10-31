@@ -25,10 +25,12 @@ public sealed class DictationSession : IAsyncDisposable
     { _capture = capture; _engine = engine; _settings = settings; }
     public void Start()
     {
-        var processor = _engine.CreateProcessor(_settings.Language, _settings.CpuThreads);
         _capture.Level += (_, level) => Level?.Invoke(this, level);
         _capture.Faulted += OnCaptureFault;
         _capture.Start(); _elapsed.Start();
+        Whisper.net.WhisperProcessor processor;
+        try { processor = _engine.CreateProcessor(_settings.Language, _settings.CpuThreads); }
+        catch { _ = _capture.StopAsync(); throw; }
         _reader = Task.Run(() => ReadAudioAsync(_settings.VadThreshold));
         _worker = Task.Run(async () =>
         {

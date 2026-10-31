@@ -177,7 +177,7 @@ public sealed partial class MainViewModel : ObservableObject
     }
     public async Task DownloadModelAsync(ModelItemViewModel item)
     {
-        if (item.Busy || Models.IsBusy) return;
+        if (item.Busy || Models.IsBusy || ControllerBusy) return;
         item.Busy = true; item.Progress = 0; item.ProgressText = $"Нужно скачать {item.Size}. Аудио никуда не отправляется."; item.Refresh();
         try
         {

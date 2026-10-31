@@ -27,7 +27,11 @@ public sealed class MicrophoneCaptureSession : IAsyncDisposable
         _capture.DataAvailable += OnData;
         _capture.RecordingStopped += OnStopped;
     }
-    public void Start() => _capture.StartRecording();
+    public void Start()
+    {
+        try { _capture.StartRecording(); }
+        catch { _stopped.TrySetResult(); throw; }
+    }
     private void OnData(object? sender, WaveInEventArgs args)
     {
         if (_cts.IsCancellationRequested || args.BytesRecorded == 0) return;

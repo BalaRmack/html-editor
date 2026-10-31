@@ -42,6 +42,7 @@ public sealed class AppServices : IAsyncDisposable
         Themes.Apply(Settings.Current.Theme);
         Hotkeys.Configure(LocalVoice.App.Platform.HotkeyParser.Parse(Settings.Current.Hotkey));
         ViewModel.Settings.Load(); ViewModel.RefreshModels(); await ViewModel.InitializeAsync();
+        if (Settings.LoadWarning) ViewModel.Notice = "Основные настройки были повреждены; восстановлена резервная копия. Проверьте раздел «Настройки».";
     }
     public async ValueTask DisposeAsync()
     {

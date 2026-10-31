@@ -29,7 +29,7 @@
                 <TextBlock Text="{Binding ModelSummary}" Style="{StaticResource Muted}" VerticalAlignment="Center" FontSize="10"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Command="{Binding CopyCommand}" IsEnabled="{Binding HasLiveText}" Content="Копировать" Style="{StaticResource Quiet}" Focusable="False" MinHeight="28" Padding="9,4" FontSize="11"/>
-                    <Button Command="{Binding OpenExportCommand}" Click="OnExportClick" Content="Экспорт ↗" Style="{StaticResource Quiet}" Focusable="False" MinHeight="28" Padding="9,4" FontSize="11"/>
+                    <Button Click="OnExportClick" Content="Экспорт ↗" Style="{StaticResource Quiet}" Focusable="False" MinHeight="28" Padding="9,4" FontSize="11"/>
                     <Button Command="{Binding ToggleListeningCommand}" Content="Стоп" Style="{StaticResource Primary}" Focusable="False" MinHeight="28" Padding="13,4" Margin="6,0,0,0" FontSize="11"/>
                 </StackPanel>
             </Grid>
