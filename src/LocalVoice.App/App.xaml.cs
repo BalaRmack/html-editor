@@ -47,8 +47,8 @@ public partial class App : Application
             _services = new AppServices(); await _services.InitializeAsync(CancellationToken.None); _initialized = true;
             _overlay = new OverlayWindow { DataContext = _services.ViewModel };
             _tray = new TrayService(_services.ViewModel, () => ShowMain("Dashboard"), () => ShowMain("Settings"), () => ShowMain("History"), ExitApplication);
-            _services.Controller.SessionStarting += (_, _) => Dispatcher.BeginInvoke(() => { _overlay?.ShowNoActivate(); });
-            _services.Controller.SessionStopping += (_, _) => Dispatcher.BeginInvoke(() => _overlay?.HideAnimated());
+            _services.Controller.SessionStarting += (_, _) => Dispatcher.BeginInvoke(() => { _overlay?.ShowNoActivate(); _services.Hotkeys.BeginSession(_services.Settings.Current.Mode == ListeningMode.PushToTalk); });
+            _services.Controller.SessionStopping += (_, _) => Dispatcher.BeginInvoke(() => { _services.Hotkeys.EndSession(); _overlay?.HideAnimated(); });
             _services.Hotkeys.Pressed += (_, _) => HotkeyPressed();
             _services.Hotkeys.Released += (_, _) => { if (_services.Settings.Current.Mode == ListeningMode.PushToTalk) Fire(_services.Controller.StopAsync()); };
             _services.Hotkeys.Escape += (_, _) => { if (_services.Controller.State != DictationState.Idle) Fire(_services.Controller.StopAsync()); };

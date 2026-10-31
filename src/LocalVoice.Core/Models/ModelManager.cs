@@ -111,7 +111,7 @@ public sealed class ModelManager : IDisposable
     public static Uri ValidateDownloadUri(string value)
     {
         var uri = new Uri(value);
-        if (uri.Scheme != "https" || !uri.IsDefaultPort || string.IsNullOrEmpty(uri.Host) ||
+        if (uri.Scheme != "https" || !uri.IsDefaultPort || !string.IsNullOrEmpty(uri.UserInfo) || string.IsNullOrEmpty(uri.Host) ||
             !(uri.Host.Equals("huggingface.co", StringComparison.OrdinalIgnoreCase) ||
               uri.Host.EndsWith(".huggingface.co", StringComparison.OrdinalIgnoreCase) ||
               uri.Host.EndsWith(".hf.co", StringComparison.OrdinalIgnoreCase) ||
