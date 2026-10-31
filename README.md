@@ -127,7 +127,7 @@ dotnet publish src/LocalVoice.App -c Release -r win-x64 --self-contained true `
 5. Проверка native/.NET runtime layout.
 6. Артефакты и GitHub Release assets.
 
-Speech smoke **не** проверяет живой микрофон, глобальные hotkey, трей, оверлей и SendInput. Это ручные Windows-проверки: [docs/manual-test-plan.md](docs/manual-test-plan.md).
+Speech smoke **не** проверяет живой микрофон, глобальные hotkey, трей, оверлей и SendInput. Это ручные Windows-проверки: [docs/manual-test-plan.md](docs/manual-test-plan.md). Фактические результаты CI: [docs/verification.md](docs/verification.md).
 
 ## Архитектура
 
