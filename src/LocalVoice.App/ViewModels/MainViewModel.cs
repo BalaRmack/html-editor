@@ -242,8 +242,17 @@ public sealed partial class MainViewModel : ObservableObject
         catch (Exception ex) { ReportError(ex, "Автозапуск"); }
         OnPropertyChanged(nameof(Settings));
     }
-    public void CancelHotkeyCapture() { Settings.IsCapturingHotkey = false; Settings.Hotkey = SettingsStore.Current.Hotkey; Hotkeys.Resume(); }
-    public void CaptureHotkey(HotkeySpec spec) { Settings.IsCapturingHotkey = false; Settings.Hotkey = spec.ToString(); Hotkeys.Resume(); Notice = "Сочетание записано. Нажмите «Сохранить настройки»."; }
+    public void CancelHotkeyCapture()
+    {
+        Settings.IsCapturingHotkey = false; Settings.Hotkey = SettingsStore.Current.Hotkey;
+        try { Hotkeys.Resume(); } catch (Exception ex) { ReportError(ex, "Возврат горячей клавиши"); }
+    }
+    public void CaptureHotkey(HotkeySpec spec)
+    {
+        Settings.IsCapturingHotkey = false; Settings.Hotkey = spec.ToString();
+        try { Hotkeys.Resume(); Notice = "Сочетание записано. Нажмите «Сохранить настройки»."; }
+        catch (Exception ex) { ReportError(ex, "Горячая клавиша"); }
+    }
     public void ReportError(Exception exception, string context)
     {
         Log.Error(context, exception); LastError = exception.Message; HasError = true; Notice = exception.Message;

@@ -39,8 +39,10 @@ public sealed class AppServices : IAsyncDisposable
     public async Task InitializeAsync(CancellationToken ct)
     {
         await Settings.LoadAsync(ct); await History.LoadAsync(ct); await Statistics.LoadAsync();
+        Settings.Current.StartWithWindows = Startup.IsEnabled();
         Themes.Apply(Settings.Current.Theme);
-        Hotkeys.Configure(LocalVoice.App.Platform.HotkeyParser.Parse(Settings.Current.Hotkey));
+        try { Hotkeys.Configure(LocalVoice.App.Platform.HotkeyParser.Parse(Settings.Current.Hotkey)); }
+        catch (Exception ex) { ViewModel.ReportError(ex, "Горячая клавиша"); }
         ViewModel.Settings.Load(); ViewModel.RefreshModels(); await ViewModel.InitializeAsync();
         if (Settings.LoadWarning) ViewModel.Notice = "Основные настройки были повреждены; восстановлена резервная копия. Проверьте раздел «Настройки».";
     }
