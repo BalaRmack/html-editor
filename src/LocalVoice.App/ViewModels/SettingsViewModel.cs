@@ -48,7 +48,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         s.SaveHistory = SaveHistory; s.InputDeviceId = Microphone.Id;
         return s;
     }
-    [RelayCommand] private void RefreshDevices()
+    [RelayCommand] public void RefreshDevices()
     {
         var selected = _main.SettingsStore.Current.InputDeviceId;
         Microphones.Clear(); Microphones.Add(new("", "Системный по умолчанию"));
