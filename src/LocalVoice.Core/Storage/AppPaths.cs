@@ -4,7 +4,7 @@ public sealed class AppPaths
 {
     public AppPaths(string? root = null)
     {
-        Root = root ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LocalVoice");
+        Root = Path.GetFullPath(root ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LocalVoice"));
         SettingsFile = Path.Combine(Root, "settings.json");
         HistoryFile = Path.Combine(Root, "history.json");
         StatisticsFile = Path.Combine(Root, "statistics.json");

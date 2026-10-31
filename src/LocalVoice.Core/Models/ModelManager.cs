@@ -49,7 +49,7 @@ public sealed class ModelManager : IDisposable
                 progress?.Report(new(model.ExpectedBytes, model.ExpectedBytes, "Проверка SHA-256"));
                 await VerifyAsync(model, linked.Token).ConfigureAwait(false); return;
             }
-            var free = new DriveInfo(Path.GetPathRoot(target)!).AvailableFreeSpace;
+            var free = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(target))!).AvailableFreeSpace;
             if (free < model.ExpectedBytes + 256L * 1024 * 1024)
                 throw new IOException("Недостаточно места. Освободите ещё как минимум 256 МБ сверх размера модели.");
             TryDelete(partial);

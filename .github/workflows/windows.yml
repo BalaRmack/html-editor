@@ -61,7 +61,7 @@ jobs:
             Invoke-WebRequest -Uri "$base/$name" -OutFile $file
             if ((Get-FileHash $file).Hash -ne $samples[$name]) { throw "Sample hash mismatch: $name" }
           }
-          dotnet run --project tests/LocalVoice.SpeechSmoke -c Release --no-build -- --audio-dir artifacts/speech --data-dir artifacts/speech-data
+          dotnet run --project tests/LocalVoice.SpeechSmoke -c Release --no-build -- --audio-dir artifacts/speech --data-dir (Join-Path (Get-Location) artifacts/speech-data)
           if ($LASTEXITCODE -ne 0) {
             $report = 'artifacts/speech-data/speech-smoke.json'
             if (Test-Path $report) {
