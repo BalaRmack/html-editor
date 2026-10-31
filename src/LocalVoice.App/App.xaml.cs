@@ -2,6 +2,8 @@ using System.IO;
 using System.Security.Principal;
 using System.Threading;
 using System.Windows;
+using Application = System.Windows.Application;
+using MessageBox = System.Windows.MessageBox;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;

@@ -1,5 +1,6 @@
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using NAudio.CoreAudioApi;
 using LocalVoice.Core;
 namespace LocalVoice.App.Services;
 
@@ -12,7 +13,7 @@ public sealed class MicrophoneService
         return enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active)
             .Using(x => x.Select(d => new MicrophoneDevice(d.ID, d.FriendlyName)).ToArray());
     }
-    public (WasapiCapture Capture, NAudio.CoreAudioApi.MMDevice Device, string Name) CreateCapture(string deviceId)
+    public (WasapiCapture Capture, MMDevice Device, string Name) CreateCapture(string deviceId)
     {
         var enumerator = new MMDeviceEnumerator();
         MMDevice? device = null;

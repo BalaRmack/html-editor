@@ -25,7 +25,7 @@ public sealed class ModelTests
     public void Unsafe_download_urls_are_rejected(string url)
     {
         // The fake test handler never contacts a network. Production uses the pinned HTTPS catalog.
-        Assert.Throws<InvalidDataException>(() => ModelCatalog.ValidateDownloadUri(url));
+        Assert.Throws<InvalidDataException>(() => ModelManager.ValidateDownloadUri(url));
     }
     [Fact] public async Task Download_verifies_hash_and_cleans_unverified_file()
     {

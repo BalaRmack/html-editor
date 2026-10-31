@@ -58,7 +58,7 @@ public sealed class ConfigurationTests
 }
 public sealed class TempDirectory : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "localvoice-tests-" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "localvoice-tests-" + Guid.NewGuid().ToString("N"));
     public TempDirectory() => Directory.CreateDirectory(_root);
     public string Path(string name) => System.IO.Path.Combine(_root, name);
     public void Dispose() { try { Directory.Delete(_root, true); } catch (IOException) { } }

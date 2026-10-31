@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using System.Windows.Interop;
 using LocalVoice.App.Platform;
 using LocalVoice.App.Services;

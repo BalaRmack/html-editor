@@ -2,12 +2,13 @@ using System.Buffers.Binary;
 using System.Threading.Channels;
 using LocalVoice.Core;
 using NAudio.Wave;
+using NAudio.CoreAudioApi;
 namespace LocalVoice.App.Services;
 
 public sealed class MicrophoneCaptureSession : IAsyncDisposable
 {
     private readonly WasapiCapture _capture;
-    private readonly NAudio.CoreAudioApi.MMDevice _owner;
+    private readonly MMDevice _owner;
     private readonly CancellationTokenSource _cts = new();
     private readonly TaskCompletionSource _stopped = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _overflow;
@@ -18,7 +19,7 @@ public sealed class MicrophoneCaptureSession : IAsyncDisposable
     public event EventHandler<float>? Level;
     public event EventHandler<Exception>? Faulted;
     public bool Overflowed => Volatile.Read(ref _overflow) != 0;
-    public MicrophoneCaptureSession(WasapiCapture capture, NAudio.CoreAudioApi.MMDevice owner, string name)
+    public MicrophoneCaptureSession(WasapiCapture capture, MMDevice owner, string name)
     {
         _capture = capture; DeviceName = name;
         // WasapiCapture does not own the MMDevice; keep it alive until capture is disposed.
