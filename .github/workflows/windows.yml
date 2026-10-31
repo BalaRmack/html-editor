@@ -15,9 +15,25 @@ jobs:
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '8.0.4xx'
-      - name: Restore, build, test and publish
+      - name: Restore and build
         shell: pwsh
-        run: ./scripts/build.ps1 -Task all -SkipInstaller
+        run: |
+          ./scripts/build.ps1 -Task restore
+          ./scripts/build.ps1 -Task build -Version 1.0.0
+      - name: Core tests
+        shell: pwsh
+        run: ./scripts/build.ps1 -Task test
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: test-diagnostics
+          path: artifacts/tests/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Publish
+        shell: pwsh
+        run: ./scripts/build.ps1 -Task publish -Version 1.0.0
       - name: Install Inno Setup
         shell: pwsh
         run: |
