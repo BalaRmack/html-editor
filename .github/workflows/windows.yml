@@ -23,6 +23,17 @@ jobs:
       - name: Core tests
         shell: pwsh
         run: ./scripts/build.ps1 -Task test
+      - name: Report test failures
+        if: failure()
+        shell: pwsh
+        run: |
+          Get-ChildItem artifacts/tests -Filter *.trx -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+            [xml]$trx = Get-Content $_.FullName
+            $trx.TestRun.Results.UnitTestResult | Where-Object { $_.outcome -eq 'Failed' } | ForEach-Object {
+              $message = ($_.Output.ErrorInfo.Message + ' ' + $_.Output.ErrorInfo.StackTrace) -replace "`r",'' -replace "`n",' '
+              Write-Host "::error::$($_.testName): $message"
+            }
+          }
       - name: Upload test diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
