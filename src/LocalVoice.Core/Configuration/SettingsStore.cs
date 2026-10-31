@@ -12,9 +12,9 @@ public sealed class SettingsStore
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            LoadWarning = File.Exists(_path);
-            Current = AppSettings.Normalize(await AtomicJsonStore.LoadAsync(_path, () => new AppSettings(), ct).ConfigureAwait(false));
-            LoadWarning &= !File.Exists(_path);
+            var loaded = await AtomicJsonStore.LoadWithStatusAsync(_path, () => new AppSettings(), ct).ConfigureAwait(false);
+            Current = AppSettings.Normalize(loaded.Value);
+            LoadWarning = loaded.UsedBackup;
         }
         finally { _gate.Release(); }
     }

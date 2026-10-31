@@ -13,7 +13,10 @@ public static class AtomicJsonStore
         NumberHandling = JsonNumberHandling.Strict
     };
     public static async Task<T> LoadAsync<T>(string path, Func<T> fallback, CancellationToken ct = default) where T : class
+        => (await LoadWithStatusAsync(path, fallback, ct).ConfigureAwait(false)).Value;
+    public static async Task<(T Value, bool UsedBackup, bool HadExistingFile)> LoadWithStatusAsync<T>(string path, Func<T> fallback, CancellationToken ct = default) where T : class
     {
+        var hadExistingFile = File.Exists(path) || File.Exists(path + ".bak");
         foreach (var candidate in new[] { path, path + ".bak" })
         {
             if (!File.Exists(candidate)) continue;
@@ -21,12 +24,12 @@ public static class AtomicJsonStore
             {
                 await using var stream = File.OpenRead(candidate);
                 var value = await JsonSerializer.DeserializeAsync<T>(stream, Options, ct).ConfigureAwait(false);
-                if (value is not null) return value;
+                if (value is not null) return (value, candidate.EndsWith(".bak", StringComparison.Ordinal), hadExistingFile);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException) { }
         }
-        return fallback();
+        return (fallback(), false, hadExistingFile);
     }
     public static async Task SaveAsync<T>(string path, T value, CancellationToken ct = default)
     {

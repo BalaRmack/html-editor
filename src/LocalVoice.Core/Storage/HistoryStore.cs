@@ -49,6 +49,12 @@ public sealed class HistoryStore
         finally { _gate.Release(); }
         Changed?.Invoke(this, EventArgs.Empty);
     }
-    public Task ClearAsync() => DeleteAsync(_items.Select(x => x.Id).ToArray());
+    public async Task ClearAsync()
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try { _items.Clear(); await AtomicJsonStore.SaveAsync(_path, new HistoryDocument { Items = _items }).ConfigureAwait(false); }
+        finally { _gate.Release(); }
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
     private sealed class HistoryDocument { public int SchemaVersion { get; set; } = 1; public List<TranscriptEntry>? Items { get; set; } }
 }

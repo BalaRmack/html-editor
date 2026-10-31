@@ -36,8 +36,12 @@ public sealed class UtteranceAccumulator
             while (_preRollSeconds > 0.30 && _preRoll.Count > 1) _preRollSeconds -= _preRoll.Dequeue().Seconds;
             if (!voiced) { IsSpeaking = false; return default; }
             _active = true; IsSpeaking = true;
-            while (_preRoll.TryDequeue(out var previous)) Append(previous);
-            _preRollSeconds = 0;
+            while (_preRoll.TryDequeue(out var previous))
+            {
+                Append(previous);
+                if (previous.Rms > Threshold * 0.6) _voicedSeconds += previous.Seconds;
+            }
+            _preRollSeconds = 0; _sincePartial = _preRoll.Sum(x => x.Seconds);
             return new(true, false, false);
         }
         Append(frame);

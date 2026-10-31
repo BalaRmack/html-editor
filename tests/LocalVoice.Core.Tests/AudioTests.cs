@@ -29,8 +29,9 @@ public sealed class AudioTests
     {
         var vad = new UtteranceAccumulator(); var due = false;
         for (var i = 0; i < 130; i++) due |= vad.Accept(Frame(.1f)).FinalDue;
-        Assert.True(due); Assert.True(vad.BufferedSeconds <= 12.1);
+        Assert.True(due);
         Assert.NotEmpty(vad.TakeFinal(force: true));
+        Assert.True(vad.BufferedSeconds <= 12.1);
     }
     [Fact] public void Very_short_noise_is_not_a_final_transcript()
     {
