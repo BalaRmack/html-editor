@@ -44,7 +44,9 @@ jobs:
           retention-days: 7
       - name: Publish
         shell: pwsh
-        run: ./scripts/build.ps1 -Task publish -Version 1.0.0
+        run: |
+          try { ./scripts/build.ps1 -Task publish -Version 1.0.0 }
+          catch { Write-Host "::error::Publish failed: $($_ | Out-String)"; throw }
       - name: Speech smoke test (RU / EN / auto)
         shell: pwsh
         run: |

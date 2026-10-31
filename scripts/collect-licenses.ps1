@@ -4,6 +4,7 @@ $root = Split-Path $PSScriptRoot -Parent
 $assets = Join-Path $root 'src/LocalVoice.App/obj/project.assets.json'
 if (-not (Test-Path $assets)) { throw 'Restore the app before collecting licenses.' }
 $cacheLine = (& dotnet nuget locals global-packages --list | Select-Object -First 1)
+Write-Host "NuGet cache line: $cacheLine"
 $cache = ($cacheLine -replace '^.*global-packages:\s*','').Trim()
 if (-not (Test-Path $cache)) { throw "NuGet cache not found: $cache" }
 $json = Get-Content $assets -Raw | ConvertFrom-Json
@@ -15,7 +16,7 @@ foreach ($lib in $json.libraries.PSObject.Properties) {
     $parts = $lib.Name -split '/'
     $id = $parts[0]; $version = $parts[1]
     $pkg = Join-Path $cache (Join-Path $id.ToLowerInvariant() $version)
-    if (-not (Test-Path $pkg)) { continue }
+    if (-not (Test-Path $pkg)) { Write-Host "Skip missing package folder: $pkg"; continue }
     $files = Get-ChildItem $pkg -File | Where-Object { $_.Name -match '^(license|licence|copying|notice|third-party)' }
     if ($files.Count -eq 0) {
         $nuspec = Get-ChildItem $pkg -Filter *.nuspec -File | Select-Object -First 1
