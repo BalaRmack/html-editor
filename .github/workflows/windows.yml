@@ -66,6 +66,10 @@ jobs:
           }
           $speechData = Join-Path (Get-Location).Path 'artifacts/speech-data'
           dotnet run --project tests/LocalVoice.SpeechSmoke -c Release --no-build -- --audio-dir artifacts/speech --data-dir $speechData
+          if ($LASTEXITCODE -eq 0) {
+            $report = 'artifacts/speech-data/speech-smoke.json'
+            if (Test-Path $report) { Write-Host "::notice::Speech smoke passed: $((Get-Content $report -Raw) -replace "`r",'' -replace "`n",' ')" }
+          }
           if ($LASTEXITCODE -ne 0) {
             $report = 'artifacts/speech-data/speech-smoke.json'
             if (Test-Path $report) {
@@ -108,16 +112,23 @@ jobs:
         run: |
           $setup = 'artifacts/installer/LocalVoice-1.0.0-win-x64-setup.exe'
           $dir = Join-Path $env:RUNNER_TEMP 'LocalVoiceInstall'
-          $p = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=$dir" -Wait -PassThru
-          if ($p.ExitCode -ne 0) { throw "Installer exit code $($p.ExitCode)" }
-          if (-not (Test-Path (Join-Path $dir 'LocalVoice.exe'))) { throw 'Installed exe missing' }
-          if (-not (Test-Path (Join-Path $dir 'whisper.dll'))) { throw 'Installed native runtime missing' }
-          $unins = Join-Path $dir 'unins000.exe'
-          if (-not (Test-Path $unins)) { throw 'Uninstaller missing' }
-          Start-Process -FilePath $unins -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
-          $deadline = (Get-Date).AddSeconds(30)
-          while ((Test-Path (Join-Path $dir 'LocalVoice.exe')) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
-          if (Test-Path (Join-Path $dir 'LocalVoice.exe')) { throw 'Uninstall did not remove exe' }
+          try {
+            $p = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=$dir" -Wait -PassThru
+            if ($p.ExitCode -ne 0) { throw "Installer exit code $($p.ExitCode)" }
+            if (-not (Test-Path (Join-Path $dir 'LocalVoice.exe'))) { throw 'Installed exe missing' }
+            if (-not (Test-Path (Join-Path $dir 'whisper.dll'))) { throw 'Installed native runtime missing' }
+            $unins = Join-Path $dir 'unins000.exe'
+            if (-not (Test-Path $unins)) { throw 'Uninstaller missing' }
+            $u = Start-Process -FilePath $unins -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+            if ($u.ExitCode -ne 0) { throw "Uninstaller exit code $($u.ExitCode)" }
+            $deadline = (Get-Date).AddSeconds(30)
+            while ((Test-Path (Join-Path $dir 'LocalVoice.exe')) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
+            if (Test-Path (Join-Path $dir 'LocalVoice.exe')) { throw 'Uninstall did not remove exe' }
+          } catch {
+            Write-Host "::error::Install smoke failed: $($_ | Out-String)"
+            if (Test-Path $dir) { Get-ChildItem $dir -Force | Select-Object Name,Length | Out-String | Write-Host }
+            throw
+          }
       - name: Verify self-contained layout
         shell: pwsh
         run: |
