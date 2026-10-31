@@ -116,7 +116,7 @@ jobs:
             $p = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=$dir" -Wait -PassThru
             if ($p.ExitCode -ne 0) { throw "Installer exit code $($p.ExitCode)" }
             if (-not (Test-Path (Join-Path $dir 'LocalVoice.exe'))) { throw 'Installed exe missing' }
-            if (-not (Test-Path (Join-Path $dir 'whisper.dll'))) { throw 'Installed native runtime missing' }
+            if (-not (Get-ChildItem $dir -Recurse -Filter whisper.dll -ErrorAction SilentlyContinue)) { throw 'Installed native runtime missing' }
             $unins = Join-Path $dir 'unins000.exe'
             if (-not (Test-Path $unins)) { throw 'Uninstaller missing' }
             $u = Start-Process -FilePath $unins -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
