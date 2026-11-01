@@ -12,7 +12,7 @@ public partial class OverlayWindow : Window
 {
     private const double BaseWidth = 352;
     private const double CapsuleHeight = 96;
-    private const double ExpandedHeight = 224;
+    private const double ExpandedHeight = 260;
     private int _generation;
     private MainViewModel? _model;
 

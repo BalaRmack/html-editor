@@ -53,11 +53,12 @@ internal static class Program
                 throw new InvalidOperationException($"Overlay is not compact: {overlay.Width}x{overlay.Height}");
             Save(overlay, Path.Combine(outDir, "overlay.png"));
             services.ViewModel.IsOverlayExpanded = false;
-            services.ViewModel.LiveText = "Привет, это проверка."; Pump();
-            if (!services.ViewModel.IsOverlayExpanded || overlay.Height < 220)
+            services.ViewModel.LiveText = "Привет, это проверка."; Pump(); PumpFor(350);
+            if (!services.ViewModel.IsOverlayExpanded) throw new InvalidOperationException("Live text did not expand view model");
+            if (overlay.Height < 220)
                 throw new InvalidOperationException("Live text must expand the compact overlay");
             Save(overlay, Path.Combine(outDir, "overlay-live-text.png"));
-            services.ViewModel.IsOverlayExpanded = false; services.ViewModel.LiveText = ""; Pump();
+            services.ViewModel.IsOverlayExpanded = false; services.ViewModel.LiveText = ""; Pump(); PumpFor(250);
             overlay.ShowFailure("Тестовая ошибка: микрофон недоступен."); Pump();
             if (!overlay.IsVisible || !services.ViewModel.HasOverlayError)
                 throw new InvalidOperationException("Overlay error disappeared instead of staying visible.");
@@ -107,6 +108,13 @@ internal static class Program
         var l1 = L(a); var l2 = L(b);
         var ratio = (Math.Max(l1, l2) + 0.05) / (Math.Min(l1, l2) + 0.05);
         if (ratio < 4.5) throw new InvalidOperationException($"Insufficient contrast {ratio:F2}: {a} on {b}");
+    }
+    private static void PumpFor(int milliseconds)
+    {
+        var frame = new DispatcherFrame();
+        var timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(milliseconds) };
+        timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+        timer.Start(); Dispatcher.PushFrame(frame);
     }
     private static void Pump()
     {

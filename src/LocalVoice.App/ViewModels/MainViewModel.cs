@@ -112,7 +112,11 @@ public sealed partial class MainViewModel : ObservableObject
     private static void OnUi(Action action) => Application.Current.Dispatcher.BeginInvoke(action);
     private static void OnUi(Func<Task> action) => Application.Current.Dispatcher.BeginInvoke(async () => { try { await action(); } catch (Exception ex) { AppServices.Current.Log.Error("UI async action", ex); } });
     partial void OnLastTextChanged(string value) { OnPropertyChanged(nameof(HasText)); }
-    partial void OnLiveTextChanged(string value) { OnPropertyChanged(nameof(HasLiveText)); }
+    partial void OnLiveTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasLiveText));
+        if (!string.IsNullOrWhiteSpace(value)) IsOverlayExpanded = true;
+    }
     partial void OnTotalSecondsChanged(double value) => OnPropertyChanged(nameof(TotalTimeText));
     partial void OnHistorySearchChanged(string value) => FilterHistory();
     partial void OnOverlayErrorChanged(string value) { OnPropertyChanged(nameof(HasOverlayError)); OnPropertyChanged(nameof(ShowOverlayNormal)); }
