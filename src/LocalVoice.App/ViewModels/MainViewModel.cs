@@ -25,6 +25,7 @@ public sealed partial class MainViewModel : ObservableObject
     public TextInsertionService Insertion { get; }
     public ExportProviderRegistry ExportProviders { get; }
     public IAppLog Log { get; }
+    public UpdateService Updates { get; }
     private readonly StartupService _startup;
     private readonly ThemeService _themes;
     private readonly Func<string, Task<bool>> _confirm;
@@ -49,7 +50,7 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isHistoryEnabled;
     [ObservableProperty] private bool _isOverlayExpanded;
     [ObservableProperty] private string _overlayError = "";
-    public string Version => typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.1.0";
+    public string Version => typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.2.0";
     public bool IsBusy => Controller.State != DictationState.Idle;
     public bool IsListening => Controller.State == DictationState.Listening;
     public bool IsTesting => Controller.IsTesting;
@@ -73,10 +74,10 @@ public sealed partial class MainViewModel : ObservableObject
     public MainViewModel(SettingsStore settings, ModelManager models, WhisperEngine engine, HistoryStore history, StatisticsStore statistics,
         DictationController controller, HotkeyService hotkeys, MicrophoneService microphones, ClipboardService clipboard,
         TextInsertionService insertion, ExportProviderRegistry providers, IAppLog log, StartupService startup, ThemeService themes,
-        Func<string, Task<bool>> confirm)
+        UpdateService updates, Func<string, Task<bool>> confirm)
     {
         SettingsStore = settings; Models = models; Engine = engine; History = history; Statistics = statistics; Controller = controller; Hotkeys = hotkeys;
-        Microphones = microphones; Clipboard = clipboard; Insertion = insertion; ExportProviders = providers; Log = log; _startup = startup; _themes = themes; _confirm = confirm;
+        Microphones = microphones; Clipboard = clipboard; Insertion = insertion; ExportProviders = providers; Log = log; _startup = startup; _themes = themes; Updates = updates; _confirm = confirm;
         Settings = new SettingsViewModel(this);
         Tutorial.Completed += (_, _) => _ = CompleteTutorialAsync();
         Tutorial.NavigateRequested += (_, tab) => Navigate(tab);
@@ -176,7 +177,19 @@ public sealed partial class MainViewModel : ObservableObject
         try { Directory.CreateDirectory(Log.DirectoryPath); Process.Start(new ProcessStartInfo("explorer.exe") { Arguments = $"\"{Log.DirectoryPath}\"", UseShellExecute = true }); }
         catch (Exception ex) { ReportError(ex, "Открытие логов"); }
     }
-    [RelayCommand] private void CheckUpdates() => MessageBox.Show($"LocalVoice {Version}\n\nАвтоматическое обновление в этой локальной сборке не подключено. Приложение ничего не проверяет в сети. Новый установщик можно получить у поставщика сборки и запустить поверх текущей версии.", "Проверка обновлений", MessageBoxButton.OK, MessageBoxImage.Information);
+    [RelayCommand] private async Task CheckUpdatesAsync()
+    {
+        await Updates.CheckAndDownloadAsync(true);
+        Notice = Updates.StatusText;
+    }
+    [RelayCommand] private async Task InstallUpdateAsync()
+    {
+        if (IsBusy || IsTesting || Models.IsBusy || ModelItems.Any(x => x.Busy))
+        { Notice = "Сначала завершите диктовку или загрузку модели — затем установите обновление."; return; }
+        if (!Updates.IsReady) await Updates.CheckAndDownloadAsync(true);
+        if (!Updates.IsReady) { Notice = Updates.DetailText.Length > 0 ? Updates.DetailText : "Обновление пока недоступно."; return; }
+        (Application.Current as App)?.RequestInstallUpdate();
+    }
     [RelayCommand] private void OpenLicenses()
     {
         try { Process.Start(new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "THIRD-PARTY-NOTICES.md")) { UseShellExecute = true }); }

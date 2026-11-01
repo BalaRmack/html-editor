@@ -6,7 +6,7 @@ public enum OverlayPosition { BottomCenter, BottomRight, BottomLeft, TopCenter, 
 
 public sealed class AppSettings
 {
-    public int SchemaVersion { get; set; } = 2;
+    public int SchemaVersion { get; set; } = 3;
     public string Hotkey { get; set; } = "Ctrl+Alt+Space";
     public ListeningMode Mode { get; set; } = ListeningMode.Toggle;
     public string Language { get; set; } = "auto";
@@ -20,6 +20,8 @@ public sealed class AppSettings
     public bool StartWithWindows { get; set; }
     public bool SaveHistory { get; set; } = true;
     public bool TutorialCompleted { get; set; }
+    public bool AutoUpdate { get; set; } = true;
+    public bool AutoInstallUpdates { get; set; } = true;
     public int HistoryLimit { get; set; } = 200;
     public double VadThreshold { get; set; } = 0.012;
     public int CpuThreads { get; set; } = Math.Clamp(Environment.ProcessorCount / 2, 2, 8);
@@ -29,7 +31,7 @@ public sealed class AppSettings
     {
         var s = source ?? new AppSettings();
         var previousSchema = s.SchemaVersion;
-        s.SchemaVersion = 2;
+        s.SchemaVersion = 3;
         // One-time move from the old blue/system default to the requested neutral black theme.
         // Explicit Light/Dark choices are preserved; the user can still re-select "system" afterwards.
         if (previousSchema < 2 && s.Theme == AppTheme.System) s.Theme = AppTheme.Dark;

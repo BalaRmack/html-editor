@@ -69,7 +69,7 @@ public sealed class UiSettingsTests
     [Fact] public void New_defaults_use_black_theme_and_show_tutorial_once()
     {
         var s = new AppSettings();
-        Assert.Equal(AppTheme.Dark, s.Theme); Assert.False(s.TutorialCompleted); Assert.Equal(2, s.SchemaVersion);
+        Assert.Equal(AppTheme.Dark, s.Theme); Assert.False(s.TutorialCompleted); Assert.Equal(3, s.SchemaVersion);
     }
     [Fact] public void Legacy_system_theme_moves_to_black_but_explicit_light_is_preserved()
     {
@@ -83,5 +83,55 @@ public sealed class UiSettingsTests
         var s = new AppSettings { TutorialCompleted = true };
         Assert.True(s.Clone().TutorialCompleted);
         Assert.True(AppSettings.Normalize(s).TutorialCompleted);
+    }
+}
+
+public sealed class UpdatePolicyTests
+{
+    [Theory]
+    [InlineData("v1.2.3", "1.2.3")]
+    [InlineData("1.2.3", "1.2.3")]
+    [InlineData("v2.0", "2.0.0")]
+    public void Stable_versions_parse(string tag, string expected)
+    {
+        Assert.True(UpdatePolicy.TryParseStableVersion(tag, out var version));
+        Assert.Equal(expected, version.ToString(3));
+    }
+    [Theory]
+    [InlineData("v1.2.3-beta.1")]
+    [InlineData("nightly")]
+    [InlineData("")]
+    public void Prerelease_or_invalid_tags_are_rejected(string tag) => Assert.False(UpdatePolicy.TryParseStableVersion(tag, out _));
+
+    [Fact] public void Only_newer_versions_are_offered()
+    {
+        Assert.True(UpdatePolicy.IsNewer(new Version(1, 2, 1), new Version(1, 2, 0)));
+        Assert.False(UpdatePolicy.IsNewer(new Version(1, 2, 0), new Version(1, 2, 0)));
+        Assert.False(UpdatePolicy.IsNewer(new Version(1, 1, 9), new Version(1, 2, 0)));
+    }
+    [Fact] public void Checksum_must_match_expected_asset_and_be_64_hex()
+    {
+        var hash = new string('a', 64);
+        Assert.True(UpdatePolicy.TryReadChecksum($"{hash}  LocalVoice-1.2.0-win-x64-setup.exe\n", "LocalVoice-1.2.0-win-x64-setup.exe", out var parsed));
+        Assert.Equal(hash, parsed);
+        Assert.True(UpdatePolicy.TryReadChecksum($"{hash} *LocalVoice-1.2.0-win-x64-setup.exe", "LocalVoice-1.2.0-win-x64-setup.exe", out _));
+        Assert.False(UpdatePolicy.TryReadChecksum($"{hash}  other.exe", "LocalVoice-1.2.0-win-x64-setup.exe", out _));
+        Assert.False(UpdatePolicy.TryReadChecksum("nothash  LocalVoice-1.2.0-win-x64-setup.exe", "LocalVoice-1.2.0-win-x64-setup.exe", out _));
+        Assert.False(UpdatePolicy.TryReadChecksum($"{hash}  LocalVoice-1.2.0-win-x64-setup.exe\nextra", "LocalVoice-1.2.0-win-x64-setup.exe", out _));
+    }
+    [Fact] public void Update_urls_must_be_https_github()
+    {
+        Assert.True(UpdatePolicy.IsTrustedInitialUrl("https://api.github.com/repos/BalaRmack/html-editor/releases/assets/1"));
+        Assert.True(UpdatePolicy.IsTrustedInitialUrl("https://github.com/BalaRmack/html-editor/releases/download/v1.2.0/file.exe"));
+        Assert.False(UpdatePolicy.IsTrustedInitialUrl("http://api.github.com/x"));
+        Assert.False(UpdatePolicy.IsTrustedInitialUrl("https://evil.example/x"));
+    }
+    [Fact] public void Auto_update_defaults_on_and_survives_clone()
+    {
+        var s = new AppSettings();
+        Assert.True(s.AutoUpdate); Assert.True(s.AutoInstallUpdates); Assert.Equal(3, s.SchemaVersion);
+        var clone = s.Clone(); clone.AutoUpdate = false;
+        Assert.True(s.AutoUpdate); Assert.False(clone.AutoUpdate);
+        Assert.True(AppSettings.Normalize(s).AutoUpdate);
     }
 }

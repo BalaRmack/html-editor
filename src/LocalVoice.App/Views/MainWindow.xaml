@@ -190,7 +190,11 @@
                                 <CheckBox IsChecked="{Binding AutoPaste}" Content="Автоматически вставлять финальный текст"/>
                                 <TextBlock Text="Вставка только в исходное окно и только если оно всё ещё активно. По умолчанию выключена." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="22,0,0,8"/>
                                 <CheckBox IsChecked="{Binding SaveHistory}" Content="Сохранять историю текстов на диск"/>
-                                <TextBlock Text="При отключении сохранённая история удаляется. Аудио не сохраняется никогда." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="22,0,0,0"/>
+                                <TextBlock Text="При отключении сохранённая история удаляется. Аудио не сохраняется никогда." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="22,0,0,8"/>
+                                <CheckBox IsChecked="{Binding AutoUpdate}" Content="Автоматически скачивать обновления"/>
+                                <TextBlock Text="Приложение проверяет GitHub Releases и скачивает установщик внутри себя. Аудио и текст не отправляются." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="22,0,0,8"/>
+                                <CheckBox IsChecked="{Binding AutoInstallUpdates}" Content="Устанавливать обновления автоматически, когда приложение свободно"/>
+                                <TextBlock Text="Если выключено, обновление скачается, но установится только кнопкой «Установить сейчас»." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="22,0,0,0"/>
                             </StackPanel></Border>
                             <Border Style="{StaticResource Card}" Grid.Column="1" Margin="8"><StackPanel><TextBlock Text="Оформление и производительность" Style="{StaticResource H2}" Margin="0,0,0,16"/><TextBlock Text="Тема" Margin="0,0,0,8"/><ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" DisplayMemberPath="Name"/>
                                 <Grid Margin="0,19,0,0"><TextBlock Text="Потоки CPU"/><TextBlock Text="{Binding CpuThreads}" Style="{StaticResource Muted}" HorizontalAlignment="Right"/></Grid><Slider Value="{Binding CpuThreads}" Minimum="1" Maximum="{Binding MaxThreads}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,8,0,0"/>
@@ -223,9 +227,20 @@
                             <TextBlock Text="LocalVoice" FontSize="32" FontWeight="SemiBold"/><TextBlock Text="{Binding Version, StringFormat=Версия {0}}" Style="{StaticResource Muted}" Margin="0,5,0,22"/>
                             <TextBlock Text=".NET 8 + WPF · Whisper.net / whisper.cpp · NAudio" TextWrapping="Wrap"/>
                             <TextBlock Text="Приложение и исходный код — MIT. Whisper, whisper.cpp, NAudio, MVVM Toolkit и распространяемый .NET — MIT. Веса Whisper — MIT; условия сторонних провайдеров проверяются отдельно. Полные уведомления доступны в файле THIRD-PARTY-NOTICES.md." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,12,0,20"/>
-                            <WrapPanel><Button Command="{Binding OpenTutorialCommand}" Content="Пройти обучение" Style="{StaticResource Primary}" Margin="0,0,10,0"/><Button Command="{Binding OpenLicensesCommand}" Content="Лицензии" Margin="0,0,10,0"/><Button Command="{Binding CheckUpdatesCommand}" Content="Проверить обновления" Margin="0,0,10,0"/><Button Command="{Binding OpenLogsCommand}" Content="Открыть логи"/></WrapPanel>
+                            <WrapPanel><Button Command="{Binding OpenTutorialCommand}" Content="Пройти обучение" Style="{StaticResource Primary}" Margin="0,0,10,0"/><Button Command="{Binding OpenLicensesCommand}" Content="Лицензии" Margin="0,0,10,0"/><Button Command="{Binding OpenLogsCommand}" Content="Открыть логи"/></WrapPanel>
                         </StackPanel></Border>
-                        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel><TextBlock Text="Что происходит с вашим голосом" Style="{StaticResource H2}"/><TextBlock Text="Микрофон включается только во время диктовки или теста. PCM-буферы живут в оперативной памяти и ограничены по размеру. На диск попадают только распознанные тексты, если история включена. Логи не содержат речь, текст или токены. Кнопка обновления — информационная: сетевых проверок нет." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,12,0,0"/></StackPanel></Border>
+                        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel>
+                            <TextBlock Text="Обновления" Style="{StaticResource H2}"/>
+                            <TextBlock Text="{Binding Updates.StatusText}" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,4"/>
+                            <TextBlock Text="{Binding Updates.DetailText}" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                            <ProgressBar Value="{Binding Updates.Progress, Mode=OneWay}" Maximum="100" Margin="0,0,0,12" Visibility="{Binding Updates.IsDownloading, Converter={StaticResource VisibleWhen}}"/>
+                            <WrapPanel>
+                                <Button Command="{Binding CheckUpdatesCommand}" Content="Проверить обновления" Margin="0,0,10,0"/>
+                                <Button Command="{Binding InstallUpdateCommand}" Content="Установить сейчас" Style="{StaticResource Primary}" IsEnabled="{Binding Updates.CanInstall}"/>
+                            </WrapPanel>
+                            <TextBlock Text="Новая версия скачивается и устанавливается без перехода в браузер. Установщик проверяется по SHA-256; настройки, история и модели сохраняются." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                        </StackPanel></Border>
+                        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel><TextBlock Text="Что происходит с вашим голосом" Style="{StaticResource H2}"/><TextBlock Text="Микрофон включается только во время диктовки или теста. PCM-буферы живут в оперативной памяти и ограничены по размеру. На диск попадают только распознанные тексты, если история включена. Логи не содержат речь, текст или токены. Проверка обновлений обращается только к GitHub Releases; аудио и распознанный текст не отправляются." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,12,0,0"/></StackPanel></Border>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

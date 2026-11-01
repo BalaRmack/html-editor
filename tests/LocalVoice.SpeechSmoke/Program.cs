@@ -13,26 +13,45 @@ using NAudio.Wave;
 var modelId = Args(args, "--model") ?? "small-q5_1";
 var audioDir = Args(args, "--audio-dir") ?? throw new ArgumentException("--audio-dir is required");
 var dataDir = Args(args, "--data-dir") ?? Path.Combine(Path.GetTempPath(), "localvoice-smoke-" + Guid.NewGuid().ToString("N"));
+var cpuMode = (Args(args, "--cpu") ?? "auto").ToLowerInvariant();
+var casesMode = (Args(args, "--cases") ?? "all").ToLowerInvariant();
+var reportName = Args(args, "--report") ?? "speech-smoke.json";
+var preference = cpuMode switch { "noavx" => CpuRuntimePreference.NoAvx, "auto" => CpuRuntimePreference.Automatic, _ => throw new ArgumentException("--cpu must be auto or noavx") };
 var model = ModelCatalog.ById[modelId];
 var paths = new AppPaths(dataDir);
 await using var log = new FileLog(paths.LogsDirectory);
 using var models = new ModelManager(paths, log);
-await using var engine = new WhisperEngine(models, log);
+await using var engine = new WhisperEngine(models, log, preference);
 var results = new List<object>();
 try
 {
-    Console.WriteLine($"Downloading/verifying {model.Id} ({model.SizeText})…");
+    Console.WriteLine($"Downloading/verifying {model.Id} ({model.SizeText})… CPU mode: {cpuMode}");
     await models.DownloadAsync(model, new Progress<DownloadProgress>(p =>
     {
         if (p.Stage == "Проверка SHA-256") Console.WriteLine("Verifying SHA-256…");
     }));
     await engine.EnsureLoadedAsync(model, CancellationToken.None);
-    foreach (var (file, language, expected) in new[]
+    var loaded = engine.LoadedRuntime ?? "";
+    Console.WriteLine($"Loaded native runtime: {loaded}");
+    if (preference == CpuRuntimePreference.NoAvx && loaded != "CpuNoAvx")
+        throw new InvalidOperationException($"Expected CpuNoAvx runtime, got '{loaded}'.");
+    if (preference == CpuRuntimePreference.Automatic && loaded is not ("Cpu" or "CpuNoAvx"))
+        throw new InvalidOperationException($"Expected a local CPU runtime, got '{loaded}'.");
+
+    var allCases = new[]
     {
         ("ru_sample.wav", "ru", new[] { "привет", "проверка", "русского" }),
         ("en_sample.wav", "en", new[] { "test", "english", "dictation" }),
         ("ru_sample.wav", "auto", new[] { "привет", "проверка" })
-    })
+    };
+    var selected = casesMode switch
+    {
+        "all" => allCases,
+        "ru" => allCases.Where(c => c.Item2 == "ru").ToArray(),
+        "en" => allCases.Where(c => c.Item2 == "en").ToArray(),
+        _ => throw new ArgumentException("--cases must be all, ru or en")
+    };
+    foreach (var (file, language, expected) in selected)
     {
         var pcm = ReadPcm16(Path.Combine(audioDir, file));
         await using var processor = engine.CreateProcessor(language, Math.Clamp(Environment.ProcessorCount / 2, 2, 8));
@@ -42,21 +61,21 @@ try
         var normalized = text.ToLowerInvariant();
         var missing = expected.Where(word => !normalized.Contains(word)).ToArray();
         Console.WriteLine($"{file} [{language}] {watch.ElapsedMilliseconds} ms: {text}");
-        results.Add(new { file, language, text, milliseconds = watch.ElapsedMilliseconds, passed = missing.Length == 0 });
+        results.Add(new { file, language, runtime = loaded, cpuMode, text, milliseconds = watch.ElapsedMilliseconds, passed = missing.Length == 0 });
         if (missing.Length > 0) throw new InvalidOperationException($"Missing expected words: {string.Join(", ", missing)}");
     }
     Console.WriteLine("SPEECH SMOKE PASSED");
 }
 catch (Exception ex)
 {
-    results.Add(new { error = ex.ToString() });
+    results.Add(new { error = ex.ToString(), cpuMode });
     Console.Error.WriteLine(ex);
     throw;
 }
 finally
 {
     await engine.DisposeAsync();
-    var report = Path.Combine(paths.Root, "speech-smoke.json");
+    var report = Path.Combine(paths.Root, reportName);
     await File.WriteAllTextAsync(report, JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
     Console.WriteLine($"Report: {report}");
 }

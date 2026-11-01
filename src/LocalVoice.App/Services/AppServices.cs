@@ -23,16 +23,18 @@ public sealed class AppServices : IAsyncDisposable
     public ClipboardService Clipboard { get; } = new();
     public TextInsertionService Insertion { get; } = new();
     public ExportProviderRegistry ExportProviders { get; } = new();
+    public UpdateService Updates { get; }
     public MainViewModel ViewModel { get; }
     public AppServices()
     {
         Current = this; Paths = new AppPaths(); Log = new FileLog(Paths.LogsDirectory);
         Settings = new SettingsStore(Paths.SettingsFile); History = new HistoryStore(Paths.HistoryFile); Statistics = new StatisticsStore(Paths.StatisticsFile);
         Models = new ModelManager(Paths, Log); Engine = new WhisperEngine(Models, Log);
+        Updates = new UpdateService(Paths, Settings, Log);
         Controller = new DictationController(Engine, Models, Microphones, Settings, Log);
         Hotkeys = new HotkeyService(); Themes = new ThemeService();
         ViewModel = new MainViewModel(Settings, Models, Engine, History, Statistics, Controller, Hotkeys, Microphones, Clipboard, Insertion,
-            ExportProviders, Log, Startup, Themes, ConfirmAsync);
+            ExportProviders, Log, Startup, Themes, Updates, ConfirmAsync);
     }
     private static Task<bool> ConfirmAsync(string text) => Task.FromResult(
         MessageBox.Show(text, "LocalVoice", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes);
@@ -45,9 +47,10 @@ public sealed class AppServices : IAsyncDisposable
         catch (Exception ex) { ViewModel.ReportError(ex, "Горячая клавиша"); }
         ViewModel.Settings.Load(); ViewModel.RefreshModels(); await ViewModel.InitializeAsync();
         if (Settings.LoadWarning) ViewModel.Notice = "Основные настройки были повреждены; восстановлена резервная копия. Проверьте раздел «Настройки».";
+        Updates.Start(() => ViewModel.CanEdit && !Models.IsBusy && !ModelItems.Any(x => x.Busy) && !ViewModel.Tutorial.IsOpen && !ViewModel.Settings.IsCapturingHotkey);
     }
     public async ValueTask DisposeAsync()
     {
-        Hotkeys.Dispose(); await Controller.DisposeAsync(); await Engine.DisposeAsync(); Models.Dispose(); Themes.Dispose(); await Log.DisposeAsync();
+        Hotkeys.Dispose(); await Updates.DisposeAsync(); await Controller.DisposeAsync(); await Engine.DisposeAsync(); Models.Dispose(); Themes.Dispose(); await Log.DisposeAsync();
     }
 }

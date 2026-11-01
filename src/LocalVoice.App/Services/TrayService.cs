@@ -10,6 +10,7 @@ public sealed class TrayService : IDisposable
     private readonly WinForms.NotifyIcon _icon;
     private readonly WinForms.ToolStripMenuItem _listen;
     private readonly WinForms.ToolStripMenuItem _startup;
+    private readonly WinForms.ToolStripMenuItem _installUpdate;
     private readonly MainViewModel _model;
     private readonly Action _open, _settings, _history, _exit;
     public TrayService(MainViewModel model, Action open, Action settings, Action history, Action exit)
@@ -20,6 +21,9 @@ public sealed class TrayService : IDisposable
         var menu = new WinForms.ContextMenuStrip();
         menu.Items.Add("Открыть LocalVoice", null, (_, _) => _open());
         menu.Items.Add("Обучение", null, (_, _) => { _open(); model.OpenTutorialCommand.Execute(null); });
+        menu.Items.Add("Проверить обновления", null, (_, _) => Fire(model.CheckUpdatesCommand.ExecuteAsync(null)));
+        _installUpdate = new WinForms.ToolStripMenuItem("Установить обновление", null, (_, _) => Fire(model.InstallUpdateCommand.ExecuteAsync(null))) { Enabled = false };
+        menu.Items.Add(_installUpdate);
         _listen = new WinForms.ToolStripMenuItem("Начать прослушивание", null, (_, _) => Fire(model.ToggleListeningCommand.ExecuteAsync(null)));
         menu.Items.Add(_listen);
         menu.Items.Add(new WinForms.ToolStripSeparator());
@@ -32,7 +36,8 @@ public sealed class TrayService : IDisposable
         _icon.ContextMenuStrip = menu;
         _icon.MouseClick += (_, e) => { if (e.Button == WinForms.MouseButtons.Left) _open(); };
         model.Controller.StateChanged += OnState;
-        menu.Opening += (_, _) => { _startup.Checked = model.SettingsStore.Current.StartWithWindows; };
+        model.Updates.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(UpdateService.CanInstall)) Application.Current.Dispatcher.BeginInvoke(() => _installUpdate.Enabled = model.Updates.CanInstall); };
+        menu.Opening += (_, _) => { _startup.Checked = model.SettingsStore.Current.StartWithWindows; _installUpdate.Enabled = model.Updates.CanInstall; };
         OnState(null, EventArgs.Empty);
     }
     private void OnState(object? sender, EventArgs e) => Application.Current.Dispatcher.BeginInvoke(() =>

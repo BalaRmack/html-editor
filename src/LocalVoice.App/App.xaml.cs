@@ -57,6 +57,7 @@ public partial class App : Application
                 if (_services.Controller.LastSessionError is null) _overlay?.HideAnimated();
             });
             _services.Controller.SessionFailed += (_, message) => Dispatcher.BeginInvoke(() => _overlay?.ShowFailure(message));
+            _services.Updates.InstallRequested += (_, installer) => Dispatcher.BeginInvoke(() => ApplyUpdate(installer));
             _services.Hotkeys.Pressed += (_, _) => HotkeyPressed();
             _services.Hotkeys.Released += (_, _) => { if (_services.Settings.Current.Mode == ListeningMode.PushToTalk) Fire(_services.Controller.StopAsync()); };
             _services.Hotkeys.Escape += (_, _) => { if (_services.Controller.State != DictationState.Idle) Fire(_services.Controller.StopAsync()); };
@@ -66,7 +67,12 @@ public partial class App : Application
                 if (!_services.Settings.Current.TutorialCompleted) _services.ViewModel.OpenTutorialCommand.Execute(null);
             }
             else if (!_services.Models.LooksInstalled(ModelCatalog.ById[_services.Settings.Current.ModelId])) _tray.ShowMessage("Откройте LocalVoice в трее и скачайте первую модель.");
-            _services.Log.Info("Application ready; no network requests or model preload.");
+            if (e.Args.Contains("--update-failed", StringComparer.OrdinalIgnoreCase))
+            {
+                ShowMain("About");
+                _services.ViewModel.Notice = "Не удалось установить обновление. Подробности в логах; можно попробовать ещё раз в разделе «О приложении».";
+            }
+            _services.Log.Info("Application ready; audio stays local. Update checks may contact GitHub Releases.");
         }
         catch (Exception ex)
         {
@@ -103,6 +109,30 @@ public partial class App : Application
         if (!_main.IsVisible) _main.Show();
         if (_main.WindowState == WindowState.Minimized) _main.WindowState = WindowState.Normal;
         _main.Activate();
+    }
+    public void RequestInstallUpdate()
+    {
+        if (_services?.Updates.PendingInstallerPath is not { } installer || _exiting) return;
+        if (_services.Controller.State != DictationState.Idle || _services.Controller.IsTesting || _services.Models.IsBusy)
+        { _services.ViewModel.Notice = "Обновление установится, когда диктовка и загрузки будут свободны."; return; }
+        ApplyUpdate(installer);
+    }
+    private void ApplyUpdate(string installer)
+    {
+        if (_services is null || _exiting) return;
+        try
+        {
+            var currentExe = Path.Combine(AppContext.BaseDirectory, "LocalVoice.exe");
+            var currentDir = AppContext.BaseDirectory;
+            var installed = File.Exists(Path.Combine(currentDir, "unins000.exe"));
+            var installDir = installed ? currentDir : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "LocalVoice");
+            var target = Path.Combine(installDir, "LocalVoice.exe");
+            UpdateInstallerHelper.Launch(installer, target, Environment.ProcessId, _services.Paths.LogsDirectory, currentExe);
+            _tray?.ShowMessage("Устанавливаю обновление и перезапущу LocalVoice…");
+            _services.Log.Info("Silent update helper launched.");
+            ExitApplication();
+        }
+        catch (Exception ex) { _services.Updates.MarkInstallFailed(ex); _services.ViewModel.ReportError(ex, "Установка обновления"); }
     }
     public void HideOverlay() => _overlay?.HideAnimated();
     public void PrepareOverlayExport()

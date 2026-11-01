@@ -2,7 +2,7 @@
 param(
     [ValidateSet('restore','build','test','publish','installer','all')]
     [string]$Task = 'all',
-    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '1.1.0',
+    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '1.2.0',
     [string]$Configuration = 'Release',
     [string]$Runtime = 'win-x64',
     [string]$InnoCompiler,
@@ -51,6 +51,10 @@ if ($Task -in @('publish','all')) {
     if (-not (Test-Path -LiteralPath $exe)) { throw "Publish did not create $exe" }
     $native = Get-ChildItem -LiteralPath $publish -Recurse -File | Where-Object { $_.Name -eq 'whisper.dll' }
     if (-not $native) { throw 'The native whisper.dll runtime is missing from publish output.' }
+    $noAvxDir = Join-Path $publish 'runtimes/noavx/win-x64'
+    foreach ($dll in @('whisper.dll','ggml-whisper.dll','ggml-base-whisper.dll','ggml-cpu-whisper.dll')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $noAvxDir $dll))) { throw "NoAvx runtime missing: $dll" }
+    }
     & (Join-Path $PSScriptRoot 'collect-licenses.ps1') -PublishDir $publish
     Get-FileHash -Algorithm SHA256 -LiteralPath $exe | ForEach-Object { "$($_.Hash.ToLowerInvariant())  LocalVoice.exe" } | Set-Content -Encoding ascii (Join-Path $publish 'LocalVoice.exe.sha256')
     Write-Host "Published: $exe"

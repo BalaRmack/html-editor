@@ -23,6 +23,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _autoPaste;
     [ObservableProperty] private bool _startWithWindows;
     [ObservableProperty] private bool _saveHistory;
+    [ObservableProperty] private bool _autoUpdate;
+    [ObservableProperty] private bool _autoInstallUpdates;
     public IReadOnlyList<NamedOption> Modes { get; } = [new("Toggle", "Нажал — слушает / нажал — стоп"), new("PushToTalk", "Удерживать клавиши — говорить")] ;
     public IReadOnlyList<NamedOption> Languages { get; } = [new("auto", "Авто · русский / английский"), new("ru", "Русский"), new("en", "English"), new("de", "Deutsch"), new("fr", "Français"), new("es", "Español"), new("uk", "Українська"), new("zh", "中文"), new("ja", "日本語")];
     public IReadOnlyList<NamedOption> Themes { get; } = [new("System", "Как в Windows"), new("Dark", "Чёрная"), new("Light", "Светлая")];
@@ -37,6 +39,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         Theme = Themes.First(x => x.Id == s.Theme.ToString()); OverlayPosition = Positions.First(x => x.Id == s.OverlayPosition.ToString());
         OverlayScale = s.OverlayScale; OverlayOpacity = s.OverlayOpacity; VadThreshold = s.VadThreshold; CpuThreads = s.CpuThreads;
         AutoPaste = s.AutoPaste; StartWithWindows = s.StartWithWindows; SaveHistory = s.SaveHistory;
+        AutoUpdate = s.AutoUpdate; AutoInstallUpdates = s.AutoInstallUpdates;
         RefreshDevices();
     }
     public AppSettings ToSettings()
@@ -45,7 +48,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         s.Hotkey = Hotkey; s.Mode = Enum.Parse<ListeningMode>(Mode.Id); s.Language = Language.Id; s.Theme = Enum.Parse<AppTheme>(Theme.Id);
         s.OverlayPosition = Enum.Parse<Core.OverlayPosition>(OverlayPosition.Id); s.OverlayScale = OverlayScale; s.OverlayOpacity = OverlayOpacity;
         s.VadThreshold = VadThreshold; s.CpuThreads = CpuThreads; s.AutoPaste = AutoPaste; s.StartWithWindows = StartWithWindows;
-        s.SaveHistory = SaveHistory; s.InputDeviceId = Microphone.Id;
+        s.SaveHistory = SaveHistory; s.AutoUpdate = AutoUpdate; s.AutoInstallUpdates = AutoInstallUpdates; s.InputDeviceId = Microphone.Id;
         return s;
     }
     [RelayCommand] public void RefreshDevices()

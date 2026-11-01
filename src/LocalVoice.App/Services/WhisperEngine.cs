@@ -3,6 +3,8 @@ using Whisper.net;
 using Whisper.net.LibraryLoader;
 namespace LocalVoice.App.Services;
 
+public enum CpuRuntimePreference { Automatic, NoAvx }
+
 public sealed class WhisperEngine : IAsyncDisposable
 {
     private readonly ModelManager _models;
@@ -11,8 +13,10 @@ public sealed class WhisperEngine : IAsyncDisposable
     private WhisperFactory? _factory;
     private string? _loadedId;
     private bool _disposed;
+    private readonly CpuRuntimePreference _cpuRuntime;
     public string? LoadedModelId => _loadedId;
-    public WhisperEngine(ModelManager models, IAppLog log) { _models = models; _log = log; }
+    public string? LoadedRuntime => RuntimeOptions.LoadedLibrary?.ToString();
+    public WhisperEngine(ModelManager models, IAppLog log, CpuRuntimePreference cpuRuntime = CpuRuntimePreference.Automatic) { _models = models; _log = log; _cpuRuntime = cpuRuntime; }
     public async Task EnsureLoadedAsync(ModelDescriptor model, CancellationToken ct)
     {
         await _loadGate.WaitAsync(ct).ConfigureAwait(false);
@@ -25,11 +29,17 @@ public sealed class WhisperEngine : IAsyncDisposable
             var factory = await Task.Run(() =>
             {
                 ct.ThrowIfCancellationRequested();
-                RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.Cpu];
-                return WhisperFactory.FromPath(path, new WhisperFactoryOptions { UseGpu = false });
+                // Automatic: fast AVX2 CPU runtime when supported, otherwise the bundled NoAvx runtime.
+                // No GPU/cloud runtime is ever selected. The forced mode is used only by CI smoke tests.
+                RuntimeOptions.RuntimeLibraryOrder = _cpuRuntime == CpuRuntimePreference.NoAvx
+                    ? [RuntimeLibrary.CpuNoAvx]
+                    : [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx];
+                try { return WhisperFactory.FromPath(path, new WhisperFactoryOptions { UseGpu = false }); }
+                catch (Exception ex) when (ex is PlatformNotSupportedException or DllNotFoundException or FileNotFoundException)
+                { throw new InvalidOperationException("Не удалось запустить локальный движок Whisper. Установите последнюю версию LocalVoice: в ней есть совместимый CPU-runtime без AVX. Подробности в логах.", ex); }
             }, ct).ConfigureAwait(false);
             _factory?.Dispose(); _factory = factory; _loadedId = model.Id;
-            _log.Info($"Local CPU model loaded: {model.Id}");
+            _log.Info($"Local CPU model loaded: {model.Id}; runtime={LoadedRuntime ?? "unknown"}");
         }
         finally { _loadGate.Release(); }
     }

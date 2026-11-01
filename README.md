@@ -9,10 +9,10 @@
 
 ## Скачать
 
-Готовые файлы публикуются в [GitHub Releases](https://github.com/BalaRmack/html-editor/releases/tag/v1.1.0):
+Готовые файлы публикуются в [GitHub Releases](https://github.com/BalaRmack/html-editor/releases/tag/v1.2.0):
 
-- `LocalVoice-1.1.0-win-x64-setup.exe` — per-user установщик, без обязательных прав администратора.
-- `LocalVoice-1.1.0-win-x64-portable.zip` — self-contained папка, распакуйте и запустите `LocalVoice.exe`.
+- `LocalVoice-1.2.0-win-x64-setup.exe` — per-user установщик, без обязательных прав администратора.
+- `LocalVoice-1.2.0-win-x64-portable.zip` — self-contained папка, распакуйте и запустите `LocalVoice.exe`.
 - `*.sha256` — контрольные суммы.
 
 Модели **не входят** в установщик. При первом запуске откройте раздел **Модели** и скачайте рекомендуемую `Whisper Small · Q5_1` (~181 МБ). Это единственная сетевая операция по умолчанию.
@@ -26,9 +26,19 @@
 - Русский, английский и автоопределение языка; дополнительные языки Whisper.
 - Копирование в буфер и опциональная вставка в исходное поле через `SendInput`.
 - Тёмная, светлая и системная темы; настройка положения, размера и прозрачности оверлея.
-- Автозапуск через `HKCU\...\Run`, статистика, логи, проверка обновлений-заглушка.
+- Автозапуск через `HKCU\...\Run`, статистика, логи.
+- Автообновление внутри приложения: новая версия скачивается и устанавливается без перехода в браузер; установщик проверяется по SHA-256.
+- Совместимость с CPU/виртуальными машинами без AVX: в поставку включён NoAvx-runtime Whisper.
 - Локальное распознавание, VAD на тишину, ограничение длины сессии и очереди, graceful-ошибки микрофона/модели.
 - Расширяемый реестр экспорта. По умолчанию удалённых провайдеров нет; сетевой экспорт возможен только после явного подключения и действия пользователя.
+
+## Обновления
+
+Начиная с 1.2.0 приложение само проверяет GitHub Releases при старте и затем каждые 6 часов. Если вышла новая стабильная версия, оно скачивает per-user установщик в `%LOCALAPPDATA%\LocalVoice\updates`, проверяет размер и SHA-256 и устанавливает его в фоне, когда диктовка и загрузки свободны. Браузер не открывается. Настройки, история и модели сохраняются.
+
+Отключить: **Настройки → Поведение и приватность → Автоматически скачивать обновления / Устанавливать обновления автоматически**. Если автоустановка выключена, установщик скачивается, но ждёт кнопки **О приложении → Установить сейчас**.
+
+> Версии 1.0.0–1.1.0 не содержат автообновления: их нужно один раз обновить вручную установщиком 1.2.0. Portable-версия при автообновлении устанавливается как per-user копия в `%LOCALAPPDATA%\Programs\LocalVoice`; данные не удаляются.
 
 ## Быстрый старт
 
@@ -86,7 +96,7 @@ cd html-editor
 git checkout arena/e21a0934-html-editor
 
 # Полный цикл: restore → build → test → publish → installer
-./scripts/build.ps1 -Task all -Version 1.1.0
+./scripts/build.ps1 -Task all -Version 1.2.0
 
 # Без Inno Setup
 ./scripts/build.ps1 -Task all -SkipInstaller
@@ -102,7 +112,7 @@ git checkout arena/e21a0934-html-editor
 Результаты:
 
 - `artifacts/publish/win-x64/LocalVoice.exe`
-- `artifacts/installer/LocalVoice-1.1.0-win-x64-setup.exe`
+- `artifacts/installer/LocalVoice-1.2.0-win-x64-setup.exe`
 - `artifacts/tests/*.trx`
 - `artifacts/publish/win-x64/licenses/` — собранные лицензии NuGet-пакетов.
 
@@ -110,10 +120,10 @@ git checkout arena/e21a0934-html-editor
 
 ```powershell
 dotnet restore LocalVoice.sln -p:EnableWindowsTargeting=true --use-lock-file
-dotnet build LocalVoice.sln -c Release --no-restore -p:Version=1.1.0
+dotnet build LocalVoice.sln -c Release --no-restore -p:Version=1.2.0
 dotnet test tests/LocalVoice.Core.Tests -c Release --no-build
 dotnet publish src/LocalVoice.App -c Release -r win-x64 --self-contained true `
-  -o artifacts/publish/win-x64 -p:Version=1.1.0 -p:PublishSingleFile=false -p:DebugType=none
+  -o artifacts/publish/win-x64 -p:Version=1.2.0 -p:PublishSingleFile=false -p:DebugType=none
 ```
 
 ### CI
@@ -157,7 +167,7 @@ LocalVoice.App
 - Сессия ограничена 2 минутами, финальная обработка — 30 с; при перегрузке предлагается более лёгкая модель.
 - Вставка не работает в приложения с более высоким integrity level (например, запущенными от администратора) и может блокироваться политиками безопасности.
 - Автоопределение языка на коротких фразах может ошибаться; для стабильности выберите RU или EN явно.
-- Автоматического обновления пока нет: кнопка объясняет, где взять новый установщик.
+- Автообновление использует GitHub Releases как источник файлов; аудио и распознанный текст не отправляются. При запрете сети обновление можно отключить.
 - Облачные провайдеры и OAuth намеренно не включены в базовую поставку.
 
 ## Структура репозитория

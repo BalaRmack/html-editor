@@ -8,6 +8,7 @@ the application. Models are downloaded separately, only on user request.
 | .NET / WPF / Windows Desktop runtime | SDK 8.0.4xx, runtime rolls forward at publish | MIT | https://github.com/dotnet/runtime |
 | Whisper.net | 1.8.1 | MIT | https://github.com/sandrohanea/whisper.net/tree/1.8.1 |
 | whisper.cpp / Whisper.net.Runtime CPU | 1.8.1 | MIT | https://github.com/ggml-org/whisper.cpp |
+| Whisper.net.Runtime.NoAvx (compatibility CPU runtime) | 1.8.1 | MIT | https://github.com/sandrohanea/whisper.net/tree/1.8.1 |
 | NAudio | 2.2.1 | MIT | https://github.com/NAudio/NAudio/tree/v2.2.1 |
 | CommunityToolkit.Mvvm | 8.4.0 | MIT | https://github.com/CommunityToolkit/dotnet/tree/v8.4.0 |
 | OpenAI Whisper GGML model weights | Hugging Face revision in ModelCatalog.cs | MIT | https://huggingface.co/ggerganov/whisper.cpp |
