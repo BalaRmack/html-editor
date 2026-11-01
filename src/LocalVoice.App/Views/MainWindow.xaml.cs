@@ -23,6 +23,18 @@ public partial class MainWindow : Window
             var rounded = 2; NativeMethods.DwmSetWindowAttribute(hwnd, 33, ref rounded, sizeof(int));
         };
         AppServices.Current.Themes.Changed += OnThemeChanged;
+        DataContextChanged += (_, _) =>
+        {
+            if (DataContext is MainViewModel model)
+            {
+                model.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.SelectedTab)) UiMotion.Transition(PageHost); };
+                model.Tutorial.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName is nameof(TutorialViewModel.StepIndex) or nameof(TutorialViewModel.IsOpen))
+                        Dispatcher.BeginInvoke(() => { if (model.Tutorial.IsOpen) UiMotion.Enter(TutorialCard, 12); });
+                };
+            }
+        };
         Activated += (_, _) =>
         {
             var hwnd = new WindowInteropHelper(this).Handle;
@@ -30,6 +42,7 @@ public partial class MainWindow : Window
             NativeMethods.DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int));
         };
     }
+    private void OnLoaded(object sender, RoutedEventArgs e) => UiMotion.Enter(RootGrid, 10);
     public void AllowClose() { _allowClose = true; }
     private void OnThemeChanged(object? sender, EventArgs e)
     {
@@ -47,8 +60,10 @@ public partial class MainWindow : Window
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         var model = DataContext as MainViewModel;
-        if (model is null || !model.Settings.IsCapturingHotkey) return;
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (model is not null && model.Tutorial.IsOpen && key == Key.Escape)
+        { model.Tutorial.SkipCommand.Execute(null); e.Handled = true; return; }
+        if (model is null || !model.Settings.IsCapturingHotkey) return;
         e.Handled = true;
         if (key == Key.Escape) { model.CancelHotkeyCapture(); return; }
         if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin or Key.None) return;

@@ -50,11 +50,21 @@ public partial class App : Application
             _overlay = new OverlayWindow { DataContext = _services.ViewModel };
             _tray = new TrayService(_services.ViewModel, () => ShowMain("Dashboard"), () => ShowMain("Settings"), () => ShowMain("History"), ExitApplication);
             _services.Controller.SessionStarting += (_, _) => Dispatcher.BeginInvoke(() => { _overlay?.ShowNoActivate(); _services.Hotkeys.BeginSession(_services.Settings.Current.Mode == ListeningMode.PushToTalk); });
-            _services.Controller.SessionStopping += (_, _) => Dispatcher.BeginInvoke(() => { _services.Hotkeys.EndSession(); _overlay?.HideAnimated(); });
+            _services.Controller.SessionStopping += (_, _) => Dispatcher.BeginInvoke(() =>
+            {
+                _services.Hotkeys.EndSession();
+                // A failed start must stay visible with a readable reason, not blink away.
+                if (_services.Controller.LastSessionError is null) _overlay?.HideAnimated();
+            });
+            _services.Controller.SessionFailed += (_, message) => Dispatcher.BeginInvoke(() => _overlay?.ShowFailure(message));
             _services.Hotkeys.Pressed += (_, _) => HotkeyPressed();
             _services.Hotkeys.Released += (_, _) => { if (_services.Settings.Current.Mode == ListeningMode.PushToTalk) Fire(_services.Controller.StopAsync()); };
             _services.Hotkeys.Escape += (_, _) => { if (_services.Controller.State != DictationState.Idle) Fire(_services.Controller.StopAsync()); };
-            if (!e.Args.Contains("--minimized", StringComparer.OrdinalIgnoreCase)) ShowMain("Dashboard");
+            if (!e.Args.Contains("--minimized", StringComparer.OrdinalIgnoreCase))
+            {
+                ShowMain("Dashboard");
+                if (!_services.Settings.Current.TutorialCompleted) _services.ViewModel.OpenTutorialCommand.Execute(null);
+            }
             else if (!_services.Models.LooksInstalled(ModelCatalog.ById[_services.Settings.Current.ModelId])) _tray.ShowMessage("Откройте LocalVoice в трее и скачайте первую модель.");
             _services.Log.Info("Application ready; no network requests or model preload.");
         }
@@ -94,6 +104,7 @@ public partial class App : Application
         if (_main.WindowState == WindowState.Minimized) _main.WindowState = WindowState.Normal;
         _main.Activate();
     }
+    public void HideOverlay() => _overlay?.HideAnimated();
     public void PrepareOverlayExport()
     {
         if (_services is null) return;

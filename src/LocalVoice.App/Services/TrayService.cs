@@ -19,6 +19,7 @@ public sealed class TrayService : IDisposable
         using (stream) _icon = new WinForms.NotifyIcon { Icon = new Icon(stream), Text = "LocalVoice — локальная диктовка", Visible = true };
         var menu = new WinForms.ContextMenuStrip();
         menu.Items.Add("Открыть LocalVoice", null, (_, _) => _open());
+        menu.Items.Add("Обучение", null, (_, _) => { _open(); model.OpenTutorialCommand.Execute(null); });
         _listen = new WinForms.ToolStripMenuItem("Начать прослушивание", null, (_, _) => Fire(model.ToggleListeningCommand.ExecuteAsync(null)));
         menu.Items.Add(_listen);
         menu.Items.Add(new WinForms.ToolStripSeparator());

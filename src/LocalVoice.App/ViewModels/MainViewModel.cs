@@ -30,6 +30,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly Func<string, Task<bool>> _confirm;
     private IReadOnlyList<TranscriptEntry> _allHistory = [];
     public SettingsViewModel Settings { get; }
+    public TutorialViewModel Tutorial { get; } = new();
     public ObservableCollection<ModelItemViewModel> ModelItems { get; } = [];
     public ObservableCollection<HistoryItemViewModel> HistoryItems { get; } = [];
     public ObservableCollection<IExportProvider> ConnectedProviders => new(ExportProviders.ConnectedRemote);
@@ -46,7 +47,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _historySearch = "";
     [ObservableProperty] private string _modelStorageText = "";
     [ObservableProperty] private bool _isHistoryEnabled;
-    public string Version => typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+    [ObservableProperty] private bool _isOverlayExpanded;
+    [ObservableProperty] private string _overlayError = "";
+    public string Version => typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.1.0";
     public bool IsBusy => Controller.State != DictationState.Idle;
     public bool IsListening => Controller.State == DictationState.Listening;
     public bool IsTesting => Controller.IsTesting;
@@ -54,6 +57,8 @@ public sealed partial class MainViewModel : ObservableObject
     public bool CanEdit => !IsBusy && !IsTesting;
     public bool HasText => !string.IsNullOrWhiteSpace(LastText);
     public bool HasLiveText => !string.IsNullOrWhiteSpace(LiveText);
+    public bool HasOverlayError => !string.IsNullOrWhiteSpace(OverlayError);
+    public bool ShowOverlayNormal => !HasOverlayError;
     public bool ShowExport => true;
     public string StartLabel => Controller.State switch { DictationState.Loading => "Загружаю модель…", DictationState.Listening => "Остановить", DictationState.Finishing => "Завершаю…", _ => "Начать прослушивание" };
     public string OverlayStatus => Controller.State switch { DictationState.Loading => "Загружаю модель…", DictationState.Finishing => "Завершаю…", _ => "Слушаю…" };
@@ -73,8 +78,11 @@ public sealed partial class MainViewModel : ObservableObject
         SettingsStore = settings; Models = models; Engine = engine; History = history; Statistics = statistics; Controller = controller; Hotkeys = hotkeys;
         Microphones = microphones; Clipboard = clipboard; Insertion = insertion; ExportProviders = providers; Log = log; _startup = startup; _themes = themes; _confirm = confirm;
         Settings = new SettingsViewModel(this);
+        Tutorial.Completed += (_, _) => _ = CompleteTutorialAsync();
+        Tutorial.NavigateRequested += (_, tab) => Navigate(tab);
+        Controller.SessionFailed += (_, message) => OnUi(() => { OverlayError = message; IsOverlayExpanded = true; });
         foreach (var model in ModelCatalog.All) ModelItems.Add(new(model, this));
-        Controller.StateChanged += (_, _) => OnUi(() => { RefreshState(); if (!IsBusy) LiveText = ""; });
+        Controller.StateChanged += (_, _) => OnUi(() => { RefreshState(); if (!IsBusy) LiveText = ""; if (Controller.State == DictationState.Loading) { OverlayError = ""; IsOverlayExpanded = false; } });
         Controller.Level += (_, value) => OnUi(() => Level = Math.Clamp(Math.Sqrt(value) * 2.4, 0, 1));
         Controller.LiveTextChanged += (_, text) => OnUi(() => { LiveText = text; if (IsBusy) LastText = text; });
         Controller.Error += (_, text) => OnUi(() => { LastError = text; HasError = true; Notice = text; _ = Statistics.ErrorAsync(text).ContinueWith(t => Log.Error("Statistics", t.Exception!), TaskContinuationOptions.OnlyOnFaulted); });
@@ -105,6 +113,7 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnLiveTextChanged(string value) { OnPropertyChanged(nameof(HasLiveText)); }
     partial void OnTotalSecondsChanged(double value) => OnPropertyChanged(nameof(TotalTimeText));
     partial void OnHistorySearchChanged(string value) => FilterHistory();
+    partial void OnOverlayErrorChanged(string value) { OnPropertyChanged(nameof(HasOverlayError)); OnPropertyChanged(nameof(ShowOverlayNormal)); }
     private void RefreshState()
     {
         Status = Controller.IsTesting ? "Тест микрофона · говорят 10 секунд" : Controller.State switch
@@ -122,6 +131,34 @@ public sealed partial class MainViewModel : ObservableObject
     public void Navigate(string tab) { SelectedTab = tab; if (tab == "Settings") Settings.RefreshDevices(); if (tab == "History") _ = RefreshHistoryAsync(); }
     [RelayCommand] private void RefreshModelStatuses() => RefreshModels();
     [RelayCommand] private void OpenSettings() => Navigate("Settings");
+    [RelayCommand] private void OpenTutorial() => Tutorial.Start();
+    [RelayCommand] private void ToggleOverlayExpanded() => IsOverlayExpanded = !IsOverlayExpanded;
+    [RelayCommand] private void DismissOverlayError()
+    {
+        OverlayError = ""; IsOverlayExpanded = false;
+        (Application.Current as App)?.HideOverlay();
+    }
+    [RelayCommand] private async Task RetryDictationAsync()
+    {
+        OverlayError = ""; IsOverlayExpanded = false;
+        try { await Controller.StartAsync(); } catch (Exception ex) { ReportError(ex, "Повторный запуск"); }
+    }
+    [RelayCommand] private void OpenOverlaySettings()
+    {
+        OverlayError = ""; IsOverlayExpanded = false;
+        (Application.Current as App)?.HideOverlay();
+        Navigate("Settings");
+    }
+    private async Task CompleteTutorialAsync()
+    {
+        try
+        {
+            if (SettingsStore.Current.TutorialCompleted) return;
+            var next = SettingsStore.Current.Clone(); next.TutorialCompleted = true;
+            await SettingsStore.SaveAsync(next);
+        }
+        catch (Exception ex) { ReportError(ex, "Сохранение обучения"); }
+    }
     [RelayCommand] private Task ToggleListeningAsync() => Controller.ToggleAsync();
     [RelayCommand] private Task TestMicrophoneAsync() => Controller.ToggleTestAsync();
     [RelayCommand] private Task CopyAsync() => CopyTextAsync(LastText);

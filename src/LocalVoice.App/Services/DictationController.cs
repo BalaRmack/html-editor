@@ -26,6 +26,8 @@ public sealed class DictationController : IAsyncDisposable
     public event EventHandler<TranscriptEntry>? Completed;
     public event EventHandler? SessionStarting;
     public event EventHandler? SessionStopping;
+    public event EventHandler<string>? SessionFailed;
+    public string? LastSessionError { get; private set; }
     public DictationController(WhisperEngine engine, ModelManager models, MicrophoneService microphones, SettingsStore settings, IAppLog log)
     { _settings = settings; _models = models; _engine = engine; _microphones = microphones; _log = log; }
     public void RememberTarget(IntPtr hwnd) { if (hwnd != IntPtr.Zero) Target = hwnd; }
@@ -36,12 +38,13 @@ public sealed class DictationController : IAsyncDisposable
         try
         {
             if (State != DictationState.Idle) return;
+            LastSessionError = null;
             if (IsTesting) await StopTestAsync().ConfigureAwait(false);
             var settings = _settings.Current.Clone();
             var model = ModelCatalog.ById[settings.ModelId];
             if (!_models.LooksInstalled(model))
             {
-                Notice?.Invoke(this, "Сначала скачайте модель в разделе «Модели». Это единственная сетевая загрузка.");
+                Fail("Модель ещё не скачана. Откройте раздел «Модели» и скачайте Small — после этого диктовка работает без интернета.");
                 return;
             }
             var cts = new CancellationTokenSource(); _startCancellation = cts;
@@ -55,15 +58,15 @@ public sealed class DictationController : IAsyncDisposable
                 _session = session;
                 session.Level += (_, value) => Level?.Invoke(this, value);
                 session.TextChanged += (_, value) => LiveTextChanged?.Invoke(this, value);
-                session.Faulted += (_, ex) => { ReportError(ex, "Capture/recognition"); _ = Task.Run(StopAsync); };
+                session.Faulted += (_, ex) => { FailSession(ex, "Capture/recognition"); _ = Task.Run(StopAsync); };
                 session.Start(); ActiveDevice = name; SetState(DictationState.Listening);
                 _log.Info("Dictation started");
             }
             catch (OperationCanceledException) { await CleanupSessionAsync().ConfigureAwait(false); SessionStopping?.Invoke(this, EventArgs.Empty); SetState(DictationState.Idle); }
             catch (Exception ex)
             {
-                await CleanupSessionAsync().ConfigureAwait(false); SessionStopping?.Invoke(this, EventArgs.Empty); SetState(DictationState.Idle);
-                ReportError(ex, "Start dictation");
+                await CleanupSessionAsync().ConfigureAwait(false); SetState(DictationState.Idle); SessionStopping?.Invoke(this, EventArgs.Empty);
+                FailSession(ex, "Start dictation");
             }
             finally { _startCancellation = null; cts.Dispose(); }
         }
@@ -95,6 +98,18 @@ public sealed class DictationController : IAsyncDisposable
             _log.Info("Dictation stopped");
         }
         finally { _gate.Release(); }
+    }
+    private void Fail(string message)
+    {
+        LastSessionError = message;
+        Notice?.Invoke(this, message);
+        SessionFailed?.Invoke(this, message);
+    }
+    private void FailSession(Exception ex, string context)
+    {
+        LastSessionError = ex.Message;
+        ReportError(ex, context);
+        SessionFailed?.Invoke(this, ex.Message);
     }
     private void CancelStart()
     {

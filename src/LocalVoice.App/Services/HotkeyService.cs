@@ -15,6 +15,7 @@ public sealed class HotkeyService : IDisposable
     private IntPtr _hook;
     private HotkeySpec _spec;
     private bool _ptt, _suspended, _disposed;
+    private long _lastPressTick;
     public event EventHandler? Pressed;
     public event EventHandler? Released;
     public event EventHandler? Escape;
@@ -64,7 +65,13 @@ public sealed class HotkeyService : IDisposable
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == NativeMethods.WM_HOTKEY && wParam.ToInt32() == 0x4C56)
-        { handled = true; Pressed?.Invoke(this, EventArgs.Empty); }
+        {
+            handled = true;
+            var now = Environment.TickCount64;
+            // Some keyboard drivers / remote-desktop layers deliver the same chord twice.
+            // A duplicate must not immediately stop the session that the first message started.
+            if (now - _lastPressTick >= 350) { _lastPressTick = now; Pressed?.Invoke(this, EventArgs.Empty); }
+        }
         return IntPtr.Zero;
     }
     private IntPtr HookCallback(int code, IntPtr wParam, IntPtr lParam)

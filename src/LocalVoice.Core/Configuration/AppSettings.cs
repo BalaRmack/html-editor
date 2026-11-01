@@ -6,19 +6,20 @@ public enum OverlayPosition { BottomCenter, BottomRight, BottomLeft, TopCenter, 
 
 public sealed class AppSettings
 {
-    public int SchemaVersion { get; set; } = 1;
+    public int SchemaVersion { get; set; } = 2;
     public string Hotkey { get; set; } = "Ctrl+Alt+Space";
     public ListeningMode Mode { get; set; } = ListeningMode.Toggle;
     public string Language { get; set; } = "auto";
     public string ModelId { get; set; } = "small-q5_1";
     public string InputDeviceId { get; set; } = "";
-    public AppTheme Theme { get; set; } = AppTheme.System;
+    public AppTheme Theme { get; set; } = AppTheme.Dark;
     public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.BottomCenter;
     public double OverlayScale { get; set; } = 1.0;
     public double OverlayOpacity { get; set; } = 0.96;
     public bool AutoPaste { get; set; }
     public bool StartWithWindows { get; set; }
     public bool SaveHistory { get; set; } = true;
+    public bool TutorialCompleted { get; set; }
     public int HistoryLimit { get; set; } = 200;
     public double VadThreshold { get; set; } = 0.012;
     public int CpuThreads { get; set; } = Math.Clamp(Environment.ProcessorCount / 2, 2, 8);
@@ -27,7 +28,11 @@ public sealed class AppSettings
     public static AppSettings Normalize(AppSettings? source)
     {
         var s = source ?? new AppSettings();
-        s.SchemaVersion = 1;
+        var previousSchema = s.SchemaVersion;
+        s.SchemaVersion = 2;
+        // One-time move from the old blue/system default to the requested neutral black theme.
+        // Explicit Light/Dark choices are preserved; the user can still re-select "system" afterwards.
+        if (previousSchema < 2 && s.Theme == AppTheme.System) s.Theme = AppTheme.Dark;
         if (!HotkeySpec.TryParse(s.Hotkey, out var hotkey)) s.Hotkey = "Ctrl+Alt+Space";
         else s.Hotkey = hotkey.ToString();
         if (!ModelCatalog.ById.ContainsKey(s.ModelId)) s.ModelId = "small-q5_1";
@@ -35,7 +40,7 @@ public sealed class AppSettings
         if (s.Language != "auto" && (s.Language.Length != 2 || !s.Language.All(char.IsAsciiLetter))) s.Language = "auto";
         s.InputDeviceId ??= "";
         if (!Enum.IsDefined(s.Mode)) s.Mode = ListeningMode.Toggle;
-        if (!Enum.IsDefined(s.Theme)) s.Theme = AppTheme.System;
+        if (!Enum.IsDefined(s.Theme)) s.Theme = AppTheme.Dark;
         if (!Enum.IsDefined(s.OverlayPosition)) s.OverlayPosition = OverlayPosition.BottomCenter;
         s.OverlayScale = Clamp(s.OverlayScale, 0.8, 1.3, 1.0);
         s.OverlayOpacity = Clamp(s.OverlayOpacity, 0.65, 1.0, 0.96);

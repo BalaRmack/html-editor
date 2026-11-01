@@ -63,3 +63,25 @@ public sealed class TempDirectory : IDisposable
     public string Path(string name) => System.IO.Path.Combine(_root, name);
     public void Dispose() { try { Directory.Delete(_root, true); } catch (IOException) { } }
 }
+
+public sealed class UiSettingsTests
+{
+    [Fact] public void New_defaults_use_black_theme_and_show_tutorial_once()
+    {
+        var s = new AppSettings();
+        Assert.Equal(AppTheme.Dark, s.Theme); Assert.False(s.TutorialCompleted); Assert.Equal(2, s.SchemaVersion);
+    }
+    [Fact] public void Legacy_system_theme_moves_to_black_but_explicit_light_is_preserved()
+    {
+        var legacy = AppSettings.Normalize(new AppSettings { SchemaVersion = 1, Theme = AppTheme.System });
+        Assert.Equal(AppTheme.Dark, legacy.Theme);
+        var light = AppSettings.Normalize(new AppSettings { SchemaVersion = 1, Theme = AppTheme.Light });
+        Assert.Equal(AppTheme.Light, light.Theme);
+    }
+    [Fact] public void Tutorial_completion_survives_clone_and_save()
+    {
+        var s = new AppSettings { TutorialCompleted = true };
+        Assert.True(s.Clone().TutorialCompleted);
+        Assert.True(AppSettings.Normalize(s).TutorialCompleted);
+    }
+}

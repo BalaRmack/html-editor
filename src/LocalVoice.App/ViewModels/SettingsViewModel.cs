@@ -25,7 +25,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _saveHistory;
     public IReadOnlyList<NamedOption> Modes { get; } = [new("Toggle", "Нажал — слушает / нажал — стоп"), new("PushToTalk", "Удерживать клавиши — говорить")] ;
     public IReadOnlyList<NamedOption> Languages { get; } = [new("auto", "Авто · русский / английский"), new("ru", "Русский"), new("en", "English"), new("de", "Deutsch"), new("fr", "Français"), new("es", "Español"), new("uk", "Українська"), new("zh", "中文"), new("ja", "日本語")];
-    public IReadOnlyList<NamedOption> Themes { get; } = [new("System", "Как в Windows"), new("Dark", "Тёмная"), new("Light", "Светлая")];
+    public IReadOnlyList<NamedOption> Themes { get; } = [new("System", "Как в Windows"), new("Dark", "Чёрная"), new("Light", "Светлая")];
     public IReadOnlyList<NamedOption> Positions { get; } = [new("BottomCenter", "Внизу по центру"), new("BottomRight", "Внизу справа"), new("BottomLeft", "Внизу слева"), new("TopCenter", "Вверху по центру"), new("TopRight", "Вверху справа"), new("TopLeft", "Вверху слева")];
     public ObservableCollection<MicrophoneDevice> Microphones { get; } = [];
     public int MaxThreads { get; } = Math.Min(16, Environment.ProcessorCount);
