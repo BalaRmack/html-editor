@@ -33,7 +33,7 @@ public sealed class WaveformView : FrameworkElement
         Unloaded += (_, _) => _timer.Stop();
         IsVisibleChanged += (_, _) => UpdateTimer();
     }
-    private static void OnLevelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) => ((WaveformView)d)._target = Math.Clamp((double)e.NewValue, 0, 1);
+    private static void OnLevelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) => ((WaveformView)d)._target = (float)Math.Clamp((double)e.NewValue, 0, 1);
     private static void OnActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var view = (WaveformView)d;
