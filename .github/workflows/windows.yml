@@ -52,7 +52,11 @@ jobs:
           catch { Write-Host "::error::Publish failed: $($_ | Out-String)"; throw }
       - name: UI smoke tests (WPF themes, combo popup, tutorial, overlay)
         shell: pwsh
-        run: dotnet run --project tests/LocalVoice.UiSmoke -c Release --no-build -- artifacts/ui
+        run: |
+          dotnet run --project tests/LocalVoice.UiSmoke -c Release --no-build -- artifacts/ui
+          $code = $LASTEXITCODE
+          if (Test-Path artifacts/ui/error.txt) { Write-Host "::error::UI smoke error: $((Get-Content artifacts/ui/error.txt -Raw) -replace "`r",'' -replace "`n",' | ')" }
+          exit $code
       - name: Upload UI screenshots
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
