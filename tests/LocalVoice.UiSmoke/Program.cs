@@ -7,6 +7,7 @@ using System.Windows.Media.Imaging;
 using Color = System.Windows.Media.Color;
 using System.Windows.Threading;
 using LocalVoice.App.Services;
+using LocalVoice.Core;
 using LocalVoice.App.Views;
 using Application = System.Windows.Application;
 
@@ -28,6 +29,7 @@ internal static class Program
         AppServices? services = null;
         MainWindow? main = null;
         OverlayWindow? overlay = null;
+        UpdateWindow? updateWindow = null;
         try
         {
             CheckTheme(app.Resources, "Dark");
@@ -64,6 +66,22 @@ internal static class Program
                 throw new InvalidOperationException("Overlay error disappeared instead of staying visible.");
             Save(overlay, Path.Combine(outDir, "overlay-error.png"));
             overlay.HideAnimated(); Pump();
+
+            var updateRelease = new AvailableUpdate(new Version(9, 9, 9), "v9.9.9",
+                new UpdateAsset(1, "LocalVoice-9.9.9-win-x64-setup.exe", 51_000_000, "https://api.github.com/repos/BalaRmack/html-editor/releases/assets/1"),
+                new UpdateAsset(2, "LocalVoice-9.9.9-win-x64-setup.exe.sha256", 102, "https://api.github.com/repos/BalaRmack/html-editor/releases/assets/2"),
+                "Тестовое описание обновления.");
+            services.ViewModel.Updates.Offer(updateRelease, manual: true); Pump();
+            updateWindow = new UpdateWindow { DataContext = services.ViewModel.Updates };
+            updateWindow.Show(); Pump(); PumpFor(250);
+            if (updateWindow.FindName("DownloadButton") is not Button download ||
+                updateWindow.FindName("PostponeButton") is not Button postpone ||
+                updateWindow.FindName("SkipButton") is not Button skip)
+                throw new InvalidOperationException("Update prompt must expose Download/Postpone/Skip buttons");
+            if (!download.IsEnabled || !postpone.IsEnabled || !skip.IsEnabled)
+                throw new InvalidOperationException("Update prompt buttons must be enabled for a new offer");
+            Save(updateWindow, Path.Combine(outDir, "update-prompt.png"));
+            updateWindow.CloseFromPrompt(); updateWindow = null; Pump();
             Console.WriteLine("UI SMOKE PASSED");
             return 0;
         }
@@ -76,6 +94,7 @@ internal static class Program
         finally
         {
             overlay?.Close();
+            updateWindow?.CloseFromPrompt();
             if (main is not null) { main.AllowClose(); main.Close(); }
             services?.DisposeAsync().AsTask().GetAwaiter().GetResult();
             app.Shutdown();

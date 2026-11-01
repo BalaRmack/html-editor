@@ -69,7 +69,7 @@ public sealed class UiSettingsTests
     [Fact] public void New_defaults_use_black_theme_and_show_tutorial_once()
     {
         var s = new AppSettings();
-        Assert.Equal(AppTheme.Dark, s.Theme); Assert.False(s.TutorialCompleted); Assert.Equal(3, s.SchemaVersion);
+        Assert.Equal(AppTheme.Dark, s.Theme); Assert.False(s.TutorialCompleted); Assert.Equal(4, s.SchemaVersion);
     }
     [Fact] public void Legacy_system_theme_moves_to_black_but_explicit_light_is_preserved()
     {
@@ -129,9 +129,46 @@ public sealed class UpdatePolicyTests
     [Fact] public void Auto_update_defaults_on_and_survives_clone()
     {
         var s = new AppSettings();
-        Assert.True(s.AutoUpdate); Assert.True(s.AutoInstallUpdates); Assert.Equal(3, s.SchemaVersion);
+        Assert.True(s.AutoUpdate); Assert.Equal(4, s.SchemaVersion);
+        Assert.Equal("", s.SkippedUpdateVersion); Assert.Null(s.UpdatePostponedUntilUtc);
         var clone = s.Clone(); clone.AutoUpdate = false;
         Assert.True(s.AutoUpdate); Assert.False(clone.AutoUpdate);
         Assert.True(AppSettings.Normalize(s).AutoUpdate);
+    }
+}
+
+public sealed class UpdatePromptPolicyTests
+{
+    private static readonly DateTimeOffset Now = new(2026, 11, 1, 12, 0, 0, TimeSpan.Zero);
+    [Fact] public void Newer_version_prompts_by_default() =>
+        Assert.True(UpdatePromptPolicy.ShouldPrompt(new Version(1, 3, 0), new Version(1, 2, 1), null, null, Now));
+    [Fact] public void Same_or_older_version_never_prompts()
+    {
+        Assert.False(UpdatePromptPolicy.ShouldPrompt(new Version(1, 2, 1), new Version(1, 2, 1), null, null, Now));
+        Assert.False(UpdatePromptPolicy.ShouldPrompt(new Version(1, 2, 0), new Version(1, 2, 1), null, null, Now, manual: true));
+    }
+    [Fact] public void Skip_is_version_specific()
+    {
+        Assert.False(UpdatePromptPolicy.ShouldPrompt(new Version(1, 3, 0), new Version(1, 2, 1), "1.3.0", null, Now));
+        Assert.True(UpdatePromptPolicy.ShouldPrompt(new Version(1, 3, 1), new Version(1, 2, 1), "1.3.0", null, Now));
+        Assert.True(UpdatePromptPolicy.ShouldPrompt(new Version(1, 3, 0), new Version(1, 2, 1), "v1.3.0", null, Now, manual: true));
+    }
+    [Fact] public void Postpone_expires_and_manual_check_bypasses_it()
+    {
+        var until = UpdatePromptPolicy.PostponeUntil(Now);
+        Assert.Equal(Now.AddHours(24), until);
+        Assert.False(UpdatePromptPolicy.ShouldPrompt(new Version(1, 3, 0), new Version(1, 2, 1), null, until, Now.AddHours(1)));
+        Assert.True(UpdatePromptPolicy.ShouldPrompt(new Version(1, 3, 0), new Version(1, 2, 1), null, until, until.AddMinutes(1)));
+        Assert.True(UpdatePromptPolicy.ShouldPrompt(new Version(1, 3, 0), new Version(1, 2, 1), null, until, Now, manual: true));
+    }
+    [Fact] public async Task Postpone_and_skip_survive_settings_restart()
+    {
+        using var temp = new TempDirectory(); var path = temp.Path("settings.json");
+        var store = new SettingsStore(path);
+        var settings = new AppSettings { SkippedUpdateVersion = "v1.3.0", UpdatePostponedUntilUtc = Now.AddHours(24) };
+        await store.SaveAsync(settings);
+        var next = new SettingsStore(path); await next.LoadAsync();
+        Assert.Equal("1.3.0", next.Current.SkippedUpdateVersion);
+        Assert.Equal(Now.AddHours(24), next.Current.UpdatePostponedUntilUtc);
     }
 }

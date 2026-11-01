@@ -50,7 +50,7 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isHistoryEnabled;
     [ObservableProperty] private bool _isOverlayExpanded;
     [ObservableProperty] private string _overlayError = "";
-    public string Version => typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.2.1";
+    public string Version => typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.3.0";
     public bool IsBusy => Controller.State != DictationState.Idle;
     public bool IsListening => Controller.State == DictationState.Listening;
     public bool IsTesting => Controller.IsTesting;
@@ -184,15 +184,19 @@ public sealed partial class MainViewModel : ObservableObject
     }
     [RelayCommand] private async Task CheckUpdatesAsync()
     {
-        await Updates.CheckAndDownloadAsync(true);
+        await Updates.CheckForUpdatesAsync(true);
         Notice = Updates.StatusText;
     }
     [RelayCommand] private async Task InstallUpdateAsync()
     {
         if (IsBusy || IsTesting || Models.IsBusy || ModelItems.Any(x => x.Busy))
         { Notice = "Сначала завершите диктовку или загрузку модели — затем установите обновление."; return; }
-        if (!Updates.IsReady) await Updates.CheckAndDownloadAsync(true);
-        if (!Updates.IsReady) { Notice = Updates.DetailText.Length > 0 ? Updates.DetailText : "Обновление пока недоступно."; return; }
+        if (!Updates.IsReady)
+        {
+            await Updates.CheckForUpdatesAsync(true);
+            Notice = Updates.IsReady ? Updates.StatusText : (Updates.DetailText.Length > 0 ? Updates.DetailText : "Обновление пока недоступно.");
+            return;
+        }
         (Application.Current as App)?.RequestInstallUpdate();
     }
     [RelayCommand] private void OpenLicenses()

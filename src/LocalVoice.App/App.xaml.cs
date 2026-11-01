@@ -22,6 +22,9 @@ public partial class App : Application
     private MainWindow? _main;
     private OverlayWindow? _overlay;
     private TrayService? _tray;
+    private UpdateWindow? _updateWindow;
+    private UpdateOffer? _pendingUpdateOffer;
+    private DispatcherTimer? _updatePromptTimer;
     private bool _exiting, _initialized;
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -58,6 +61,8 @@ public partial class App : Application
             });
             _services.Controller.SessionFailed += (_, message) => Dispatcher.BeginInvoke(() => _overlay?.ShowFailure(message));
             _services.Updates.InstallRequested += (_, installer) => Dispatcher.BeginInvoke(() => ApplyUpdate(installer));
+            _services.Updates.UpdateOffered += (_, offer) => Dispatcher.BeginInvoke(() => QueueUpdateOffer(offer));
+            _services.Updates.PromptClosed += (_, _) => Dispatcher.BeginInvoke(CloseUpdatePrompt);
             _services.Hotkeys.Pressed += (_, _) => HotkeyPressed();
             _services.Hotkeys.Released += (_, _) => { if (_services.Settings.Current.Mode == ListeningMode.PushToTalk) Fire(_services.Controller.StopAsync()); };
             _services.Hotkeys.Escape += (_, _) => { if (_services.Controller.State != DictationState.Idle) Fire(_services.Controller.StopAsync()); };
@@ -112,10 +117,9 @@ public partial class App : Application
     }
     public void RequestInstallUpdate()
     {
-        if (_services?.Updates.PendingInstallerPath is not { } installer || _exiting) return;
-        if (_services.Controller.State != DictationState.Idle || _services.Controller.IsTesting || _services.Models.IsBusy)
-        { _services.ViewModel.Notice = "Обновление установится, когда диктовка и загрузки будут свободны."; return; }
-        ApplyUpdate(installer);
+        if (_services is null || _exiting) return;
+        if (!_services.Updates.RequestInstall())
+            _services.ViewModel.Notice = _services.Updates.DetailText.Length > 0 ? _services.Updates.DetailText : "Обновление пока не готово к установке.";
     }
     private void ApplyUpdate(string installer)
     {
@@ -134,6 +138,43 @@ public partial class App : Application
         }
         catch (Exception ex) { _services.Updates.MarkInstallFailed(ex); _services.ViewModel.ReportError(ex, "Установка обновления"); }
     }
+    private void QueueUpdateOffer(UpdateOffer offer)
+    {
+        if (_exiting || _services is null) return;
+        _pendingUpdateOffer = offer;
+        if (TryShowUpdatePrompt()) return;
+        if (_updatePromptTimer is null)
+        {
+            _updatePromptTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            _updatePromptTimer.Tick += (_, _) => { if (TryShowUpdatePrompt()) _updatePromptTimer?.Stop(); };
+        }
+        _updatePromptTimer.Start();
+    }
+    private bool TryShowUpdatePrompt()
+    {
+        var offer = _pendingUpdateOffer;
+        if (_exiting || _services is null || offer is null) return false;
+        // Never interrupt dictation, microphone test, model download, tutorial or hotkey capture.
+        if (_services.Controller.State != DictationState.Idle || _services.Controller.IsTesting ||
+            _services.Models.IsBusy || _services.ViewModel.ModelItems.Any(x => x.Busy) ||
+            _services.ViewModel.Tutorial.IsOpen || _services.ViewModel.Settings.IsCapturingHotkey) return false;
+        _updatePromptTimer?.Stop();
+        if (_updateWindow is null)
+        {
+            _updateWindow = new UpdateWindow { DataContext = _services.Updates };
+            _updateWindow.Closed += (_, _) => _updateWindow = null;
+        }
+        if (!_updateWindow.IsVisible) _updateWindow.Show();
+        if (offer.Manual) _updateWindow.Activate();
+        _pendingUpdateOffer = null;
+        return true;
+    }
+    private void CloseUpdatePrompt()
+    {
+        _updatePromptTimer?.Stop();
+        _pendingUpdateOffer = null;
+        _updateWindow?.CloseFromPrompt();
+    }
     public void HideOverlay() => _overlay?.HideAnimated();
     public void PrepareOverlayExport()
     {
@@ -147,7 +188,7 @@ public partial class App : Application
     {
         if (_exiting) return;
         _exiting = true;
-        _tray?.Dispose(); _overlay?.Close(); _main?.AllowClose(); _main?.Close();
+        _tray?.Dispose(); CloseUpdatePrompt(); _overlay?.Close(); _main?.AllowClose(); _main?.Close();
         Fire(ShutdownAsync());
     }
     private async Task ShutdownAsync()

@@ -47,7 +47,8 @@ public sealed class AppServices : IAsyncDisposable
         catch (Exception ex) { ViewModel.ReportError(ex, "Горячая клавиша"); }
         ViewModel.Settings.Load(); ViewModel.RefreshModels(); await ViewModel.InitializeAsync();
         if (Settings.LoadWarning) ViewModel.Notice = "Основные настройки были повреждены; восстановлена резервная копия. Проверьте раздел «Настройки».";
-        Updates.Start(() => ViewModel.CanEdit && !Models.IsBusy && !ViewModel.ModelItems.Any(x => x.Busy) && !ViewModel.Tutorial.IsOpen && !ViewModel.Settings.IsCapturingHotkey);
+        Updates.SetInstallPredicate(() => ViewModel.CanEdit && !Models.IsBusy && !ViewModel.ModelItems.Any(x => x.Busy) && !ViewModel.Tutorial.IsOpen && !ViewModel.Settings.IsCapturingHotkey);
+        Updates.Start();
     }
     public async ValueTask DisposeAsync()
     {

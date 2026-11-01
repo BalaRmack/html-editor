@@ -2,7 +2,7 @@
 param(
     [ValidateSet('restore','build','test','publish','installer','all')]
     [string]$Task = 'all',
-    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '1.2.1',
+    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '1.3.0',
     [string]$Configuration = 'Release',
     [string]$Runtime = 'win-x64',
     [string]$InnoCompiler,
