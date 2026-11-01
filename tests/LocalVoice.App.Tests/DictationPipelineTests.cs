@@ -11,7 +11,7 @@ public class DictationPipelineTests
     private static AudioFrame Frame(float amplitude, int samples = 1600)
     {
         var pcm = new float[samples]; Array.Fill(pcm, amplitude);
-        return new AudioFrame(pcm, amplitude, DateTime.UtcNow);
+        return new AudioFrame(pcm, amplitude);
     }
 
     [Fact]
