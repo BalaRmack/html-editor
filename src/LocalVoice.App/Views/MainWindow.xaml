@@ -257,7 +257,7 @@
                     </Border>
                     <Button Command="{Binding Tutorial.GoToActionCommand}" Content="{Binding Tutorial.Current.ActionLabel}" Margin="0,16,0,0" HorizontalAlignment="Left"
                             Visibility="{Binding Tutorial.HasAction, Converter={StaticResource VisibleWhen}}"/>
-                    <ProgressBar Value="{Binding Tutorial.StepNumber}" Maximum="{Binding Tutorial.Steps.Count}" Margin="0,24,0,18"/>
+                    <ProgressBar Value="{Binding Tutorial.StepNumber, Mode=OneWay}" Maximum="{Binding Tutorial.Steps.Count}" Margin="0,24,0,18"/>
                     <Grid>
                         <Button Command="{Binding Tutorial.BackCommand}" IsEnabled="{Binding Tutorial.CanGoBack}" Content="Назад" HorizontalAlignment="Left"/>
                         <Button Command="{Binding Tutorial.NextCommand}" Content="{Binding Tutorial.NextLabel}" Style="{StaticResource Primary}" HorizontalAlignment="Right" MinWidth="130"/>
