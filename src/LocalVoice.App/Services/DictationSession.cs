@@ -127,8 +127,8 @@ public sealed class DictationSession : IAsyncDisposable
                 if (!_heardSpeech && _elapsed.Elapsed - _lastVoiced > TimeSpan.FromSeconds(8) && Volatile.Read(ref _processing) == 0)
                     SetStatus("Нет речи — проверьте микрофон");
             }
-            if (_capture.Overflowed || Volatile.Read(ref _overflow))
-                SetError(new InvalidOperationException(Volatile.Read(ref _overflow)
+            if (_capture.Overflowed || Volatile.Read(ref _overflow) != 0)
+                SetError(new InvalidOperationException(Volatile.Read(ref _overflow) != 0
                     ? "Достигнут лимит сессии 2 минуты. Нажмите горячую клавишу, чтобы продолжить."
                     : "Процессор не успевает. Выберите Base или закройте тяжёлые приложения."));
             var last = vad.TakeFinal(force: true);
