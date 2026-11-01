@@ -1,0 +1,211 @@
+name: Windows build and installer
+on:
+  push:
+    branches: ['arena/e21a0934-html-editor', main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '8.0.4xx'
+      - name: Restore and build
+        shell: pwsh
+        run: |
+          ./scripts/build.ps1 -Task restore
+          ./scripts/build.ps1 -Task build -Version 1.3.0
+      - name: Unit and live-pipeline tests
+        shell: pwsh
+        run: ./scripts/build.ps1 -Task test
+      - name: Report test failures
+        if: failure()
+        shell: pwsh
+        run: |
+          Get-ChildItem artifacts/tests -Filter *.trx -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+            [xml]$trx = Get-Content $_.FullName
+            $trx.TestRun.Results.UnitTestResult | Where-Object { $_.outcome -eq 'Failed' } | ForEach-Object {
+              $message = ($_.Output.ErrorInfo.Message + ' ' + $_.Output.ErrorInfo.StackTrace) -replace "`r",'' -replace "`n",' '
+              Write-Host "::error::$($_.testName): $message"
+            }
+          }
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: test-diagnostics
+          path: artifacts/tests/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Publish
+        shell: pwsh
+        run: |
+          try { ./scripts/build.ps1 -Task publish -Version 1.3.0 }
+          catch { Write-Host "::error::Publish failed: $($_ | Out-String)"; throw }
+      - name: UI smoke tests (WPF themes, combo popup, tutorial, overlay)
+        shell: pwsh
+        run: |
+          dotnet run --project tests/LocalVoice.UiSmoke -c Release --no-build -- artifacts/ui
+          $code = $LASTEXITCODE
+          if (Test-Path artifacts/ui/error.txt) { Write-Host "::error::UI smoke error: $((Get-Content artifacts/ui/error.txt -Raw) -replace "`r",'' -replace "`n",' | ')" }
+          exit $code
+      - name: Upload UI screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: LocalVoice-ui-screenshots
+          path: artifacts/ui
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Speech smoke test (RU / EN / auto)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts/speech | Out-Null
+          $base = 'https://raw.githubusercontent.com/vyorkin/voxtype-gigaam/77365e79a3f4e86b42ccf0dec0f8e56e80633da9/samples'
+          $samples = @{
+            'ru_sample.wav' = '758D148B29204E6F956A62F6CF608B848C9C60FBAA10CC9251A4F76E3DB7E1D8'
+            'en_sample.wav' = '29287F68668278AF5249C72E6C5E42B944E2CDA0BD6AB0D0AD79F16B56A02308'
+          }
+          foreach ($name in $samples.Keys) {
+            $file = Join-Path 'artifacts/speech' $name
+            Invoke-WebRequest -Uri "$base/$name" -OutFile $file
+            if ((Get-FileHash $file).Hash -ne $samples[$name]) { throw "Sample hash mismatch: $name" }
+          }
+          $speechData = Join-Path (Get-Location).Path 'artifacts/speech-data'
+          dotnet run --project tests/LocalVoice.SpeechSmoke -c Release --no-build -- --audio-dir artifacts/speech --data-dir $speechData
+          if ($LASTEXITCODE -eq 0) {
+            $report = 'artifacts/speech-data/speech-smoke.json'
+            if (Test-Path $report) { Write-Host "::notice::Speech smoke passed: $((Get-Content $report -Raw) -replace "`r",'' -replace "`n",' ')" }
+          }
+          if ($LASTEXITCODE -ne 0) {
+            $report = 'artifacts/speech-data/speech-smoke.json'
+            if (Test-Path $report) {
+              $text = Get-Content $report -Raw
+              Write-Host $text
+              Write-Host "::error::Speech smoke failed: $($text -replace "`r",'' -replace "`n",' ')"
+            }
+            throw 'Speech smoke test failed'
+          }
+      - name: Speech smoke test (forced NoAvx runtime)
+        shell: pwsh
+        run: |
+          $speechData = Join-Path (Get-Location).Path 'artifacts/speech-data'
+          dotnet run --project tests/LocalVoice.SpeechSmoke -c Release --no-build -- --audio-dir artifacts/speech --data-dir $speechData --cpu noavx --cases ru --report speech-smoke-noavx.json
+          if ($LASTEXITCODE -ne 0) {
+            $report = 'artifacts/speech-data/speech-smoke-noavx.json'
+            if (Test-Path $report) { Write-Host "::error::NoAvx speech smoke failed: $((Get-Content $report -Raw) -replace "`r",'' -replace "`n",' ')" }
+            throw 'NoAvx speech smoke test failed'
+          }
+          Write-Host "::notice::NoAvx speech smoke passed: $((Get-Content artifacts/speech-data/speech-smoke-noavx.json -Raw) -replace "`r",'' -replace "`n",' ')"
+      - name: Upload speech report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: speech-smoke-report
+          path: |
+            artifacts/speech-data/speech-smoke.json
+            artifacts/speech-data/speech-smoke-noavx.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload NuGet lock files
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nuget-lockfiles
+          path: '**/packages.lock.json'
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe'
+          $file = Join-Path $env:RUNNER_TEMP 'innosetup-6.7.4.exe'
+          Invoke-WebRequest -Uri $url -OutFile $file
+          $expected = 'A549929319F9120716677C685535CA4671E4B937B5FDC87E2585F32D8EB30E8C'
+          if ((Get-FileHash $file).Hash -ne $expected) { throw 'Inno Setup hash mismatch' }
+          Start-Process -FilePath $file -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -Wait
+      - name: Compile per-user installer
+        shell: pwsh
+        run: ./scripts/build.ps1 -Task installer
+      - name: Smoke install and uninstall (per-user, silent)
+        shell: pwsh
+        run: |
+          $setup = 'artifacts/installer/LocalVoice-1.3.0-win-x64-setup.exe'
+          $dir = Join-Path $env:RUNNER_TEMP 'LocalVoiceInstall'
+          try {
+            $p = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=$dir" -Wait -PassThru
+            if ($p.ExitCode -ne 0) { throw "Installer exit code $($p.ExitCode)" }
+            if (-not (Test-Path (Join-Path $dir 'LocalVoice.exe'))) { throw 'Installed exe missing' }
+            if (-not (Get-ChildItem $dir -Recurse -Filter whisper.dll -ErrorAction SilentlyContinue)) { throw 'Installed native runtime missing' }
+            if (-not (Test-Path (Join-Path $dir 'runtimes/noavx/win-x64/whisper.dll'))) { throw 'Installed NoAvx runtime missing' }
+            $upgrade = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-'," /DIR=$dir".Trim() -Wait -PassThru
+            if ($upgrade.ExitCode -ne 0) { throw "Upgrade installer exit code $($upgrade.ExitCode)" }
+            $unins = Join-Path $dir 'unins000.exe'
+            if (-not (Test-Path $unins)) { throw 'Uninstaller missing' }
+            $u = Start-Process -FilePath $unins -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+            if ($u.ExitCode -ne 0) { throw "Uninstaller exit code $($u.ExitCode)" }
+            $deadline = (Get-Date).AddSeconds(30)
+            while ((Test-Path (Join-Path $dir 'LocalVoice.exe')) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
+            if (Test-Path (Join-Path $dir 'LocalVoice.exe')) { throw 'Uninstall did not remove exe' }
+          } catch {
+            Write-Host "::error::Install smoke failed: $($_ | Out-String)"
+            if (Test-Path $dir) { Get-ChildItem $dir -Force | Select-Object Name,Length | Out-String | Write-Host }
+            throw
+          }
+      - name: Verify self-contained layout
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem artifacts/publish/win-x64 -Recurse -File
+          if (-not ($files.Name -contains 'coreclr.dll')) { throw '.NET runtime missing' }
+          if (-not ($files.Name -contains 'whisper.dll')) { throw 'Whisper native runtime missing' }
+          foreach ($dll in @('whisper.dll','ggml-whisper.dll','ggml-base-whisper.dll','ggml-cpu-whisper.dll')) {
+            if (-not (Test-Path "artifacts/publish/win-x64/runtimes/noavx/win-x64/$dll")) { throw "Published NoAvx runtime missing: $dll" }
+          }
+          if ($files.Name -contains 'webview2loader.dll') { throw 'Unexpected browser runtime' }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: LocalVoice-win-x64
+          path: |
+            artifacts/installer/*.exe
+            artifacts/installer/*.sha256
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: LocalVoice-portable-win-x64
+          path: artifacts/publish/win-x64
+          if-no-files-found: error
+          retention-days: 14
+      - name: Package portable zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path artifacts/publish/win-x64/* -DestinationPath artifacts/LocalVoice-1.3.0-win-x64-portable.zip -Force
+          Get-FileHash artifacts/LocalVoice-1.3.0-win-x64-portable.zip -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLowerInvariant())  LocalVoice-1.3.0-win-x64-portable.zip" } | Set-Content -Encoding ascii artifacts/LocalVoice-1.3.0-win-x64-portable.zip.sha256
+      - name: Publish GitHub Release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = 'v1.3.0'
+          $notes = 'LocalVoice 1.3.0 — interactive update prompt: when a newer stable version is detected, the app shows Download / Postpone / Skip. Postpone reminds after about 24 hours; Skip hides only that exact version. Background checks no longer download or install silently. Download and install require explicit user actions, with SHA-256 verification and no browser. Includes live dictation visibility fixes and Whisper NoAvx fallback. Windows 10/11 x64, self-contained, per-user installer.'
+          gh release view $tag --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'LocalVoice 1.3.0' --notes $notes
+            if ($LASTEXITCODE -ne 0) {
+              gh release view $tag --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+              if ($LASTEXITCODE -ne 0) { throw 'Could not create or find release' }
+            }
+          }
+          gh release upload $tag --repo $env:GITHUB_REPOSITORY --clobber `
+            artifacts/installer/LocalVoice-1.3.0-win-x64-setup.exe `
+            artifacts/installer/LocalVoice-1.3.0-win-x64-setup.exe.sha256 `
+            artifacts/LocalVoice-1.3.0-win-x64-portable.zip `
+            artifacts/LocalVoice-1.3.0-win-x64-portable.zip.sha256

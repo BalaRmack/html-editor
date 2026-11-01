@@ -1,0 +1,284 @@
+<Window x:Class="LocalVoice.App.Views.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:LocalVoice.App.Converters" xmlns:vm="clr-namespace:LocalVoice.App.ViewModels" xmlns:controls="clr-namespace:LocalVoice.App.Controls"
+        Title="LocalVoice — локальная диктовка" Width="1180" Height="840" MinWidth="1000" MinHeight="700"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource Background}" Icon="pack://application:,,,/LocalVoice;component/Assets/LocalVoice.ico"
+        FontFamily="Segoe UI Variable Text, Segoe UI" Closing="OnClosing" PreviewKeyDown="OnPreviewKeyDown" Loaded="OnLoaded">
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="VisibleWhen"/>
+        <conv:BoolToVisibilityConverter x:Key="HiddenWhen" Invert="True"/>
+        <conv:EqualToVisibilityConverter x:Key="TabVisible"/>
+        <conv:NavigationTagConverter x:Key="NavTag"/>
+        <conv:PercentConverter x:Key="Percent"/>
+        <conv:EmptyToVisibilityConverter x:Key="EmptyVisible"/>
+    </Window.Resources>
+    <Grid x:Name="RootGrid">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <!-- Quiet, persistent navigation. -->
+        <Border Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
+            <Grid Margin="18,28,18,20">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
+                        <Border Width="38" Height="38" CornerRadius="12" Background="{DynamicResource Accent}">
+                            <Path Data="{StaticResource MicIcon}" Width="22" Height="22" Stroke="{DynamicResource AccentInk}" StrokeThickness="1.8" Stretch="Uniform" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        </Border>
+                        <StackPanel Margin="11,0,0,0" VerticalAlignment="Center"><TextBlock Text="LocalVoice" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="ГОЛОС БЕЗ ОБЛАКА" FontSize="9" Foreground="{DynamicResource TextMuted}"/></StackPanel>
+                    </StackPanel>
+                    <TextBlock Text="РАБОЧЕЕ ПРОСТРАНСТВО" Style="{StaticResource Eyebrow}" Margin="14,36,0,12"/>
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Dashboard" Tag="{Binding SelectedTab, Converter={StaticResource NavTag}, ConverterParameter=Dashboard}" Style="{StaticResource Navigation}">
+                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource HomeIcon}" Style="{StaticResource Icon}" Margin="0,0,12,0"/><TextBlock Text="Диктовка"/></StackPanel>
+                    </Button>
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="History" Tag="{Binding SelectedTab, Converter={StaticResource NavTag}, ConverterParameter=History}" Style="{StaticResource Navigation}">
+                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource HistoryIcon}" Style="{StaticResource Icon}" Margin="0,0,12,0"/><TextBlock Text="История"/></StackPanel>
+                    </Button>
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Models" Tag="{Binding SelectedTab, Converter={StaticResource NavTag}, ConverterParameter=Models}" Style="{StaticResource Navigation}">
+                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource ModelIcon}" Style="{StaticResource Icon}" Margin="0,0,12,0"/><TextBlock Text="Модели"/></StackPanel>
+                    </Button>
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Settings" Tag="{Binding SelectedTab, Converter={StaticResource NavTag}, ConverterParameter=Settings}" Style="{StaticResource Navigation}">
+                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource SettingsIcon}" Style="{StaticResource Icon}" Margin="0,0,12,0"/><TextBlock Text="Настройки"/></StackPanel>
+                    </Button>
+                    <Button Command="{Binding OpenTutorialCommand}" Style="{StaticResource Navigation}">
+                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource InfoIcon}" Style="{StaticResource Icon}" Margin="0,0,12,0"/><TextBlock Text="Обучение"/></StackPanel>
+                    </Button>
+                    <TextBlock Text="РАСШИРЕНИЯ" Style="{StaticResource Eyebrow}" Margin="14,27,0,12"/>
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Integrations" Tag="{Binding SelectedTab, Converter={StaticResource NavTag}, ConverterParameter=Integrations}" Style="{StaticResource Navigation}">
+                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource ExportIcon}" Style="{StaticResource Icon}" Margin="0,0,12,0"/><TextBlock Text="Интеграции"/></StackPanel>
+                    </Button>
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="About" Tag="{Binding SelectedTab, Converter={StaticResource NavTag}, ConverterParameter=About}" Style="{StaticResource Navigation}">
+                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource InfoIcon}" Style="{StaticResource Icon}" Margin="0,0,12,0"/><TextBlock Text="О приложении"/></StackPanel>
+                    </Button>
+                </StackPanel>
+                <Border Grid.Row="2" Background="{DynamicResource AccentSoft}" CornerRadius="12" Padding="14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource ShieldIcon}" Width="17" Height="17" Stretch="Uniform" Stroke="{DynamicResource Accent}" StrokeThickness="1.6"/><TextBlock Text="Приватно по умолчанию" Foreground="{DynamicResource Accent}" FontSize="12" FontWeight="SemiBold" Margin="8,0,0,0"/></StackPanel>
+                        <TextBlock Text="Без аккаунта, подписки и отправки аудио в сеть." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions><RowDefinition Height="84"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid Margin="32,0">
+                <StackPanel VerticalAlignment="Center"><TextBlock Text="Ваше личное пространство для голоса" Style="{StaticResource Muted}"/><StackPanel Orientation="Horizontal" Margin="0,6,0,0"><Ellipse Width="7" Height="7" Fill="{DynamicResource Accent}" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="{Binding Status}" FontSize="13"/></StackPanel></StackPanel>
+                <Button Command="{Binding OpenSettingsCommand}" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="15,9">
+                    <StackPanel Orientation="Horizontal"><Path Data="{StaticResource SettingsIcon}" Style="{StaticResource Icon}" Width="17" Height="17" Margin="0,0,8,0"/><TextBlock Text="Настройки"/></StackPanel>
+                </Button>
+            </Grid>
+            <Grid Grid.Row="1" x:Name="PageHost">
+                <!-- Dashboard -->
+                <ScrollViewer Visibility="{Binding SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=Dashboard}" Padding="32,4,32,24">
+                    <StackPanel>
+                        <TextBlock Text="Скажите. Останется текстом." Style="{StaticResource H1}"/>
+                        <TextBlock Text="Диктуйте в любом приложении — LocalVoice не перехватывает фокус." Style="{StaticResource Muted}" FontSize="14" Margin="0,7,0,23"/>
+                        <Border CornerRadius="16" Background="{DynamicResource Hero}" Padding="26" Margin="0,0,0,18">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="ЛОКАЛЬНО НА ВАШЕМ КОМПЬЮТЕРЕ" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}"/>
+                                    <TextBlock Text="{Binding OverlayStatus}" FontSize="25" FontWeight="SemiBold" Margin="0,9,0,7" Visibility="{Binding IsBusy, Converter={StaticResource VisibleWhen}}"/>
+                                    <TextBlock Text="Готовы, когда вы готовы." FontSize="25" FontWeight="SemiBold" Margin="0,9,0,7" Visibility="{Binding IsBusy, Converter={StaticResource HiddenWhen}}"/>
+                                    <TextBlock Text="{Binding ListenButtonHint}" Foreground="{DynamicResource TextMuted}" FontSize="13"/>
+                                    <TextBlock Text="{Binding ModeHint}" Style="{StaticResource Muted}" Margin="0,5,0,0"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Command="{Binding ToggleListeningCommand}" Style="{StaticResource Primary}" MinWidth="238" MinHeight="62" FontSize="15" Margin="20,0,0,0">
+                                    <StackPanel Orientation="Horizontal"><Path Data="{StaticResource MicIcon}" Style="{StaticResource Icon}" Width="24" Height="24" Margin="0,0,11,0"/><TextBlock Text="{Binding StartLabel}"/></StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <UniformGrid Columns="4" Margin="-5,0,-5,18">
+                            <Border Style="{StaticResource Card}" Margin="5" Padding="15"><StackPanel><TextBlock Text="МИКРОФОН" Style="{StaticResource Eyebrow}"/><TextBlock Text="{Binding MicrophoneSummary}" TextTrimming="CharacterEllipsis" FontSize="13" Margin="0,9,0,0"/></StackPanel></Border>
+                            <Border Style="{StaticResource Card}" Margin="5" Padding="15"><StackPanel><TextBlock Text="МОДЕЛЬ · CPU" Style="{StaticResource Eyebrow}"/><TextBlock Text="{Binding ModelSummary}" TextTrimming="CharacterEllipsis" FontSize="13" Margin="0,9,0,0"/></StackPanel></Border>
+                            <Border Style="{StaticResource Card}" Margin="5" Padding="15"><StackPanel><TextBlock Text="ЯЗЫК" Style="{StaticResource Eyebrow}"/><TextBlock Text="{Binding LanguageSummary}" TextTrimming="CharacterEllipsis" FontSize="13" Margin="0,9,0,0"/></StackPanel></Border>
+                            <Border Style="{StaticResource Card}" Margin="5" Padding="15"><StackPanel><TextBlock Text="ГОРЯЧАЯ КЛАВИША" Style="{StaticResource Eyebrow}"/><TextBlock Text="{Binding HotkeySummary}" FontSize="13" Margin="0,9,0,0"/></StackPanel></Border>
+                        </UniformGrid>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,18">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Grid Margin="0,0,0,15"><StackPanel Orientation="Horizontal"><TextBlock Text="Последний текст" Style="{StaticResource H2}"/><Border Background="{DynamicResource AccentSoft}" CornerRadius="5" Padding="7,3" Margin="12,0,0,0" Visibility="{Binding IsListening, Converter={StaticResource VisibleWhen}}"><TextBlock Text="LIVE" FontSize="10" Foreground="{DynamicResource Accent}" FontWeight="Bold"/></Border></StackPanel>
+                                    <Button Command="{Binding OpenExportCommand}" Style="{StaticResource Quiet}" HorizontalAlignment="Right" Padding="9,4" MinHeight="28"><StackPanel Orientation="Horizontal"><Path Data="{StaticResource ExportIcon}" Style="{StaticResource Icon}" Width="16" Height="16" Margin="0,0,7,0"/><TextBlock Text="Экспорт" FontSize="12"/></StackPanel></Button>
+                                </Grid>
+                                <Grid Grid.Row="1" MinHeight="125">
+                                    <TextBox Text="{Binding LastText, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" MaxHeight="200" BorderThickness="0" Background="Transparent" FontSize="17" Padding="0,5" AutomationProperties.Name="Последний распознанный текст"/>
+                                    <TextBlock Text="Здесь появятся ваши слова. Начните с горячей клавиши или большой кнопки выше." Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" FontSize="16" IsHitTestVisible="False" Margin="0,8,0,0" Visibility="{Binding HasText, Converter={StaticResource HiddenWhen}}"/>
+                                </Grid>
+                                <WrapPanel Grid.Row="2" Margin="0,15,0,0">
+                                    <Button Command="{Binding CopyCommand}" IsEnabled="{Binding HasText}" Margin="0,0,8,0" Content="Копировать"/>
+                                    <Button Command="{Binding PasteCommand}" IsEnabled="{Binding HasText}" Margin="0,0,8,0" Content="Вставить в активное окно" ToolTip="Вернуть фокус в приложение, из которого началась диктовка"/>
+                                    <Button Command="{Binding ClearTextCommand}" Style="{StaticResource Quiet}" Content="Очистить"/>
+                                </WrapPanel>
+                            </Grid>
+                        </Border>
+                        <Grid Margin="-9,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="1.1*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource Card}" Margin="9">
+                                <StackPanel>
+                                    <Grid><TextBlock Text="Микрофон" Style="{StaticResource H2}"/><Button Command="{Binding TestMicrophoneCommand}" HorizontalAlignment="Right" MinHeight="30" Padding="10,5"><TextBlock Text="Тест микрофона" FontSize="12"/></Button></Grid>
+                                    <Border Background="{DynamicResource SurfaceRaised}" CornerRadius="12" Padding="12,8" Margin="0,18,0,10"><controls:WaveformView Height="44" Level="{Binding Level}" IsActive="{Binding IsTesting}" BarBrush="{DynamicResource Accent}"/></Border>
+                                    <Grid><TextBlock Text="Скажите пару слов и проверьте индикатор" Style="{StaticResource Muted}"/><TextBlock Text="{Binding Level, Converter={StaticResource Percent}}" HorizontalAlignment="Right" Style="{StaticResource Muted}"/></Grid>
+                                    <TextBlock Text="Тест длится 10 секунд. Аудио не сохраняется. Нажмите ещё раз, чтобы остановить." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Grid.Column="1" Margin="9">
+                                <StackPanel><TextBlock Text="Ваша активность" Style="{StaticResource H2}"/>
+                                    <Grid Margin="0,17,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <StackPanel><TextBlock Text="{Binding RecognitionCount}" FontSize="28" FontWeight="SemiBold"/><TextBlock Text="распознаваний" Style="{StaticResource Muted}"/></StackPanel>
+                                        <StackPanel Grid.Column="1"><TextBlock Text="{Binding TotalTimeText}" FontSize="28" FontWeight="SemiBold"/><TextBlock Text="время диктовки" Style="{StaticResource Muted}"/></StackPanel>
+                                    </Grid>
+                                    <Button Command="{Binding OpenLogsCommand}" Style="{StaticResource Quiet}" HorizontalAlignment="Left" Content="Открыть папку логов ↗" Padding="0,8" MinHeight="28" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        <Border Background="{DynamicResource DangerSoft}" CornerRadius="10" Padding="15" Margin="0,18,0,0" Visibility="{Binding HasError, Converter={StaticResource VisibleWhen}}"><StackPanel><TextBlock Text="Последняя ошибка" Foreground="{DynamicResource Danger}" FontWeight="SemiBold"/><TextBlock Text="{Binding LastError}" TextWrapping="Wrap" Margin="0,5,0,0"/></StackPanel></Border>
+                    </StackPanel>
+                </ScrollViewer>
+                <!-- History -->
+                <Grid Margin="32,4,32,24" Visibility="{Binding SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=History}">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid Margin="0,0,0,20"><StackPanel><TextBlock Text="История" Style="{StaticResource H1}"/><TextBlock Text="Только финальные тексты. Никаких аудиозаписей." Style="{StaticResource Muted}" Margin="0,7,0,0"/></StackPanel><Button Command="{Binding ClearHistoryCommand}" Content="Очистить историю" Style="{StaticResource DangerButton}" HorizontalAlignment="Right" VerticalAlignment="Center"/></Grid>
+                    <Grid Grid.Row="1" Margin="0,0,0,18"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox Text="{Binding HistorySearch, UpdateSourceTrigger=PropertyChanged}" ToolTip="Поиск по тексту" AutomationProperties.Name="Поиск по истории"/><TextBlock Text="Найдите слово или фразу…" IsHitTestVisible="False" VerticalAlignment="Center" Margin="13,0,0,0"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Muted}"><Style.Triggers><DataTrigger Binding="{Binding HistorySearch}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers><Setter Property="Visibility" Value="Collapsed"/></Style></TextBlock.Style></TextBlock><CheckBox Grid.Column="1" IsChecked="{Binding Settings.SaveHistory}" Content="Сохранять историю" Margin="18,0,0,0" ToolTip="Сохранится кнопкой «Сохранить настройки»"/></Grid>
+                    <Grid Grid.Row="2">
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding HistoryItems}">
+                                <ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource Card}" Margin="0,0,0,12"><StackPanel><Grid><TextBlock Text="{Binding Date}" Style="{StaticResource Muted}"/><TextBlock Text="{Binding Metadata}" Style="{StaticResource Muted}" HorizontalAlignment="Right"/></Grid><TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="16" Margin="0,13,0,16"/><WrapPanel><Button Command="{Binding UseCommand}" Content="Открыть текст" Margin="0,0,8,0"/><Button Command="{Binding CopyCommand}" Content="Копировать" Margin="0,0,8,0"/><Button Command="{Binding DeleteCommand}" Content="Удалить" Style="{StaticResource Quiet}"/></WrapPanel></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <TextBlock Text="Ничего не найдено. Измените поиск или начните новую диктовку." Style="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,50,0,0" IsHitTestVisible="False" Visibility="{Binding HistoryItems.Count, Converter={StaticResource EmptyVisible}}"/>
+                    </Grid>
+                </Grid>
+                <!-- Models -->
+                <ScrollViewer Margin="32,4,32,24" Visibility="{Binding SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=Models}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,20"><StackPanel><TextBlock Text="Модели на вашем устройстве" Style="{StaticResource H1}"/><TextBlock Text="{Binding ModelStorageText}" Style="{StaticResource Muted}" Margin="0,7,0,0"/></StackPanel><Button Command="{Binding RefreshModelStatusesCommand}" Content="Обновить статусы" HorizontalAlignment="Right" VerticalAlignment="Center"/></Grid>
+                        <Border Background="{DynamicResource AccentSoft}" CornerRadius="12" Padding="18" Margin="0,0,0,20"><TextBlock Text="Первый шаг — скачать Small. Загрузка начинается только по вашей кнопке. Каждый файл проверяется по закреплённому SHA-256; после этого интернет для диктовки не нужен." TextWrapping="Wrap" Foreground="{DynamicResource Accent}"/></Border>
+                        <ItemsControl ItemsSource="{Binding ModelItems}">
+                            <ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource Card}" Margin="0,0,0,13"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Name}" Style="{StaticResource H2}"/><Border Background="{DynamicResource AccentSoft}" CornerRadius="5" Padding="7,3" Margin="12,0,0,0" Visibility="{Binding Descriptor.Recommended, Converter={StaticResource VisibleWhen}}"><TextBlock Text="РЕКОМЕНДУЕМ" FontSize="9" Foreground="{DynamicResource Accent}"/></Border></StackPanel><TextBlock Text="{Binding Description}" Style="{StaticResource Muted}" Margin="0,7,0,0"/></StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top"><Button Command="{Binding DownloadCommand}" IsEnabled="{Binding CanDownload}" Content="Скачать" Margin="0,0,8,0"/><Button Command="{Binding SelectCommand}" IsEnabled="{Binding CanSelect}" Content="Выбрать" Style="{StaticResource Primary}" Margin="0,0,8,0"/><Button Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}" Content="Удалить" Style="{StaticResource Quiet}"/><Button Command="{Binding CancelCommand}" Visibility="{Binding Busy, Converter={StaticResource VisibleWhen}}" Content="Отменить" Margin="8,0,0,0"/></StackPanel>
+                                </Grid>
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,17,0,0"><TextBlock Text="{Binding Size}" Style="{StaticResource Muted}"/><TextBlock Text=" · " Style="{StaticResource Muted}"/><TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"/></StackPanel>
+                                <StackPanel Grid.Row="2" Visibility="{Binding Busy, Converter={StaticResource VisibleWhen}}" Margin="0,13,0,0"><ProgressBar Value="{Binding Progress}" Maximum="100"/><TextBlock Text="{Binding ProgressText}" Style="{StaticResource Muted}" Margin="0,7,0,0"/></StackPanel>
+                            </Grid></Border></DataTemplate></ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="Все модели многоязычные. Small — исходный выбор для CPU; Medium и Turbo требуют больше ресурсов. Модели хранятся в %LOCALAPPDATA%\LocalVoice\models и не удаляются вместе с приложением, если не выбрать это при удалении." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,7,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+                <!-- Settings -->
+                <ScrollViewer Margin="32,4,32,24" Visibility="{Binding SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=Settings}">
+                    <StackPanel DataContext="{Binding Settings}">
+                        <Grid Margin="0,0,0,22"><StackPanel><TextBlock Text="Настройки" Style="{StaticResource H1}"/><TextBlock Text="Подстройте диктовку под себя. Изменения вступят в силу после сохранения." Style="{StaticResource Muted}" Margin="0,7,0,0"/></StackPanel><Button Command="{Binding SaveCommand}" Style="{StaticResource Primary}" Content="Сохранить настройки" HorizontalAlignment="Right" VerticalAlignment="Center"/></Grid>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16"><StackPanel>
+                            <TextBlock Text="Запуск диктовки" Style="{StaticResource H2}" Margin="0,0,0,17"/>
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="Горячая клавиша" Margin="0,0,0,8"/><Button Command="{Binding CaptureHotkeyCommand}" Content="{Binding Hotkey}" HorizontalContentAlignment="Left"/><TextBlock Text="Нажмите, затем введите сочетание. Esc — отмена." Style="{StaticResource Muted}" Margin="0,7,0,0"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="Режим" Margin="0,0,0,8"/><ComboBox ItemsSource="{Binding Modes}" SelectedItem="{Binding Mode}" DisplayMemberPath="Name"/><TextBlock Text="Esc останавливает только активную диктовку." Style="{StaticResource Muted}" Margin="0,7,0,0"/></StackPanel>
+                            </Grid>
+                            <Grid Margin="0,22,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="Язык распознавания" Margin="0,0,0,8"/><ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" DisplayMemberPath="Name"/></StackPanel>
+                                <StackPanel Grid.Column="2"><Grid Margin="0,0,0,8"><TextBlock Text="Устройство ввода"/><Button Command="{Binding RefreshDevicesCommand}" Content="Обновить" Style="{StaticResource Quiet}" Padding="0" MinHeight="20" HorizontalAlignment="Right"/></Grid><ComboBox ItemsSource="{Binding Microphones}" SelectedItem="{Binding Microphone}" DisplayMemberPath="Name"/></StackPanel>
+                            </Grid>
+                        </StackPanel></Border>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16"><StackPanel>
+                            <Grid Margin="0,0,0,17"><TextBlock Text="Overlay" Style="{StaticResource H2}"/><Button Command="{Binding ResetOverlayCommand}" Content="Сбросить" HorizontalAlignment="Right" Style="{StaticResource Quiet}" MinHeight="28" Padding="9,4"/></Grid>
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="Позиция на основном экране" Margin="0,0,0,8"/><ComboBox ItemsSource="{Binding Positions}" SelectedItem="{Binding OverlayPosition}" DisplayMemberPath="Name"/><TextBlock Text="Поверх окон, без перехвата фокуса." Style="{StaticResource Muted}" Margin="0,8,0,0"/></StackPanel>
+                                <StackPanel Grid.Column="2"><Grid><TextBlock Text="Размер"/><TextBlock Text="{Binding OverlayScale, StringFormat={}{0:P0}}" HorizontalAlignment="Right" Style="{StaticResource Muted}"/></Grid><Slider Value="{Binding OverlayScale}" Minimum="0.8" Maximum="1.3" TickFrequency="0.05" IsSnapToTickEnabled="True" Margin="0,10,0,15"/><Grid><TextBlock Text="Непрозрачность"/><TextBlock Text="{Binding OverlayOpacity, StringFormat={}{0:P0}}" HorizontalAlignment="Right" Style="{StaticResource Muted}"/></Grid><Slider Value="{Binding OverlayOpacity}" Minimum="0.65" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True" Margin="0,10,0,0"/></StackPanel>
+                            </Grid>
+                        </StackPanel></Border>
+                        <Grid Margin="-8,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource Card}" Margin="8"><StackPanel><TextBlock Text="Поведение и приватность" Style="{StaticResource H2}" Margin="0,0,0,10"/>
+                                <CheckBox IsChecked="{Binding StartWithWindows}" Content="Запускать вместе с Windows"/>
+                                <CheckBox IsChecked="{Binding AutoPaste}" Content="Автоматически вставлять финальный текст"/>
+                                <TextBlock Text="Вставка только в исходное окно и только если оно всё ещё активно. По умолчанию выключена." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="22,0,0,8"/>
+                                <CheckBox IsChecked="{Binding SaveHistory}" Content="Сохранять историю текстов на диск"/>
+                                <TextBlock Text="При отключении сохранённая история удаляется. Аудио не сохраняется никогда." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="22,0,0,8"/>
+                                <CheckBox IsChecked="{Binding AutoUpdate}" Content="Автоматически проверять обновления"/>
+                                <TextBlock Text="Если вышла новая версия, появится окно: «Скачать», «Отложить» или «Пропустить». Установка выполняется только после вашего подтверждения." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,8"/>
+                                <TextBlock Text="Приложение проверяет GitHub Releases. Установщик скачивается только после нажатия «Скачать», а устанавливается только после подтверждения. Аудио и текст не отправляются." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="22,0,0,0"/>
+                            </StackPanel></Border>
+                            <Border Style="{StaticResource Card}" Grid.Column="1" Margin="8"><StackPanel><TextBlock Text="Оформление и производительность" Style="{StaticResource H2}" Margin="0,0,0,16"/><TextBlock Text="Тема" Margin="0,0,0,8"/><ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" DisplayMemberPath="Name"/>
+                                <Grid Margin="0,19,0,0"><TextBlock Text="Потоки CPU"/><TextBlock Text="{Binding CpuThreads}" Style="{StaticResource Muted}" HorizontalAlignment="Right"/></Grid><Slider Value="{Binding CpuThreads}" Minimum="1" Maximum="{Binding MaxThreads}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,8,0,0"/>
+                                <Grid Margin="0,15,0,0"><TextBlock Text="Чувствительность к тихой речи"/><TextBlock Text="{Binding VadThreshold, StringFormat={}{0:F3}}" Style="{StaticResource Muted}" HorizontalAlignment="Right"/></Grid><Slider Value="{Binding VadThreshold}" Minimum="0.003" Maximum="0.08" TickFrequency="0.001" IsSnapToTickEnabled="True" Margin="0,8,0,0"/><TextBlock Text="Меньше порог — лучше слышно тихую речь, но больше ложных срабатываний. Это энергетический VAD, не нейросетевой." Style="{StaticResource Muted}" TextWrapping="Wrap"/>
+                            </StackPanel></Border>
+                        </Grid>
+                        <Button Command="{Binding SaveCommand}" Style="{StaticResource Primary}" Content="Сохранить настройки" HorizontalAlignment="Right" Margin="0,20,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+                <!-- Integrations: honest extension points, no fake OAuth. -->
+                <ScrollViewer Margin="32,4,32,24" Visibility="{Binding SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=Integrations}">
+                    <StackPanel>
+                        <TextBlock Text="Экспорт и интеграции" Style="{StaticResource H1}"/><TextBlock Text="Вы решаете, куда отправить готовый текст." Style="{StaticResource Muted}" Margin="0,7,0,24"/>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,18"><StackPanel><TextBlock Text="Доступно без авторизации" Style="{StaticResource H2}"/><TextBlock Text="Буфер обмена и вставка через SendInput работают локально. Кнопки на главном экране и в overlay." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,17"/><WrapPanel><Button Command="{Binding CopyCommand}" IsEnabled="{Binding HasText}" Content="Копировать текст" Style="{StaticResource Primary}" Margin="0,0,10,0"/><Button Command="{Binding PasteCommand}" IsEnabled="{Binding HasText}" Content="Вставить в исходное окно"/></WrapPanel></StackPanel></Border>
+                        <Border Background="{DynamicResource AccentSoft}" CornerRadius="12" Padding="18" Margin="0,0,0,18"><TextBlock Text="Сетевые провайдеры отключены. В версии 1.0 нет подключений к внешним сервисам, фоновой синхронизации или передачи аудио. Текст может покинуть устройство только после отдельного нажатия «Экспорт» в подключённом провайдере." TextWrapping="Wrap" Foreground="{DynamicResource Accent}"/></Border>
+                        <UniformGrid Columns="3" Margin="-7,0">
+                            <Border Style="{StaticResource Card}" Margin="7"><StackPanel><TextBlock Text="Notion" Style="{StaticResource H2}"/><TextBlock Text="Страницы и базы знаний" Style="{StaticResource Muted}" Margin="0,7,0,18"/><Button Content="Провайдер не установлен" IsEnabled="False"/></StackPanel></Border>
+                            <Border Style="{StaticResource Card}" Margin="7"><StackPanel><TextBlock Text="Gmail" Style="{StaticResource H2}"/><TextBlock Text="Черновики писем" Style="{StaticResource Muted}" Margin="0,7,0,18"/><Button Content="Провайдер не установлен" IsEnabled="False"/></StackPanel></Border>
+                            <Border Style="{StaticResource Card}" Margin="7"><StackPanel><TextBlock Text="Google Docs" Style="{StaticResource H2}"/><TextBlock Text="Документы" Style="{StaticResource Muted}" Margin="0,7,0,18"/><Button Content="Провайдер не установлен" IsEnabled="False"/></StackPanel></Border>
+                        </UniformGrid>
+                        <ItemsControl ItemsSource="{Binding ConnectedProviders}" Margin="0,20,0,0"><ItemsControl.ItemTemplate><DataTemplate><Button Command="{Binding DataContext.ExportToCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" Content="{Binding DisplayName}" Style="{StaticResource Primary}"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                        <TextBlock Text="Для разработчиков: IExportProvider + ExportProviderRegistry. OAuth должен выполняться асинхронно, токены — храниться под защитой Windows.Подробнее: docs/INTEGRATIONS.md." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,22,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+                <!-- About -->
+                <ScrollViewer Margin="32,4,32,24" Visibility="{Binding SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=About}">
+                    <StackPanel>
+                        <TextBlock Text="Технологии, которые не мешают" Style="{StaticResource H1}"/><TextBlock Text="LocalVoice · локальная диктовка для Windows 10/11 x64" Style="{StaticResource Muted}" Margin="0,7,0,24"/>
+                        <Border Style="{StaticResource Card}"><StackPanel>
+                            <TextBlock Text="LocalVoice" FontSize="32" FontWeight="SemiBold"/><TextBlock Text="{Binding Version, StringFormat=Версия {0}}" Style="{StaticResource Muted}" Margin="0,5,0,22"/>
+                            <TextBlock Text=".NET 8 + WPF · Whisper.net / whisper.cpp · NAudio" TextWrapping="Wrap"/>
+                            <TextBlock Text="Приложение и исходный код — MIT. Whisper, whisper.cpp, NAudio, MVVM Toolkit и распространяемый .NET — MIT. Веса Whisper — MIT; условия сторонних провайдеров проверяются отдельно. Полные уведомления доступны в файле THIRD-PARTY-NOTICES.md." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,12,0,20"/>
+                            <WrapPanel><Button Command="{Binding OpenTutorialCommand}" Content="Пройти обучение" Style="{StaticResource Primary}" Margin="0,0,10,0"/><Button Command="{Binding OpenLicensesCommand}" Content="Лицензии" Margin="0,0,10,0"/><Button Command="{Binding OpenLogsCommand}" Content="Открыть логи"/></WrapPanel>
+                        </StackPanel></Border>
+                        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel>
+                            <TextBlock Text="Обновления" Style="{StaticResource H2}"/>
+                            <TextBlock Text="{Binding Updates.StatusText}" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,4"/>
+                            <TextBlock Text="{Binding Updates.DetailText}" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                            <ProgressBar Value="{Binding Updates.Progress, Mode=OneWay}" Maximum="100" Margin="0,0,0,12" Visibility="{Binding Updates.IsDownloading, Converter={StaticResource VisibleWhen}}"/>
+                            <WrapPanel>
+                                <Button Command="{Binding CheckUpdatesCommand}" Content="Проверить обновления" Margin="0,0,10,0"/>
+                                <Button Command="{Binding Updates.DownloadUpdateCommand}" Content="Скачать обновление" Style="{StaticResource Primary}" IsEnabled="{Binding Updates.CanDownload}" Visibility="{Binding Updates.ShowOfferButtons, Converter={StaticResource VisibleWhen}}" Margin="0,0,10,0"/>
+                                <Button Command="{Binding InstallUpdateCommand}" Content="Установить сейчас" Style="{StaticResource Primary}" IsEnabled="{Binding Updates.CanInstall}" Visibility="{Binding Updates.ShowReadyButtons, Converter={StaticResource VisibleWhen}}"/>
+                            </WrapPanel>
+                            <TextBlock Text="Новая версия предлагается в отдельном окне. Скачивание и установка выполняются только после вашего подтверждения, без перехода в браузер. Установщик проверяется по SHA-256; настройки, история и модели сохраняются." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                        </StackPanel></Border>
+                        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel><TextBlock Text="Что происходит с вашим голосом" Style="{StaticResource H2}"/><TextBlock Text="Микрофон включается только во время диктовки или теста. PCM-буферы живут в оперативной памяти и ограничены по размеру. На диск попадают только распознанные тексты, если история включена. Логи не содержат речь, текст или токены. Проверка обновлений обращается только к GitHub Releases; аудио и распознанный текст не отправляются." Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,12,0,0"/></StackPanel></Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+            <Border Grid.Row="2" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="32,12">
+                <Grid><StackPanel Orientation="Horizontal"><Path Data="{StaticResource ShieldIcon}" Width="14" Height="14" Stretch="Uniform" Stroke="{DynamicResource Accent}" StrokeThickness="1.5"/><TextBlock Text="{Binding PrivacyText}" Style="{StaticResource Muted}" Margin="8,0,0,0"/></StackPanel><TextBlock Text="{Binding Notice}" Style="{StaticResource Muted}" HorizontalAlignment="Right" MaxWidth="570" TextTrimming="CharacterEllipsis" ToolTip="{Binding Notice}"/></Grid>
+            </Border>
+        </Grid>
+
+        <!-- First-run tutorial, reopenable from the sidebar or About. -->
+        <Grid Grid.ColumnSpan="2" Panel.ZIndex="100" Visibility="{Binding Tutorial.IsOpen, Converter={StaticResource VisibleWhen}}">
+            <Border Background="{DynamicResource Scrim}"/>
+            <Border x:Name="TutorialCard" Width="580" MaxWidth="620" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="24" Padding="32">
+                <Border.Effect><DropShadowEffect BlurRadius="28" ShadowDepth="8" Opacity="0.45" Color="#000000"/></Border.Effect>
+                <StackPanel>
+                    <Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="38" Height="38" CornerRadius="12" Background="{DynamicResource Accent}">
+                                <TextBlock Text="{Binding Tutorial.StepNumber}" Foreground="{DynamicResource AccentInk}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="{Binding Tutorial.StepLabel}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </StackPanel>
+                        <Button Command="{Binding Tutorial.SkipCommand}" Content="Пропустить" Style="{StaticResource Quiet}" HorizontalAlignment="Right" MinHeight="30" Padding="10,4"/>
+                    </Grid>
+                    <TextBlock Text="{Binding Tutorial.Current.Title}" Style="{StaticResource H1}" Margin="0,22,0,12"/>
+                    <TextBlock Text="{Binding Tutorial.Current.Body}" FontSize="15" TextWrapping="Wrap" LineHeight="23"/>
+                    <Border Background="{DynamicResource AccentSoft}" CornerRadius="12" Padding="14" Margin="0,18,0,0">
+                        <TextBlock Text="{Binding Tutorial.Current.Hint}" Foreground="{DynamicResource Accent}" TextWrapping="Wrap" FontSize="13"/>
+                    </Border>
+                    <Button Command="{Binding Tutorial.GoToActionCommand}" Content="{Binding Tutorial.Current.ActionLabel}" Margin="0,16,0,0" HorizontalAlignment="Left"
+                            Visibility="{Binding Tutorial.HasAction, Converter={StaticResource VisibleWhen}}"/>
+                    <ProgressBar Value="{Binding Tutorial.StepNumber, Mode=OneWay}" Maximum="{Binding Tutorial.Steps.Count}" Margin="0,24,0,18"/>
+                    <Grid>
+                        <Button Command="{Binding Tutorial.BackCommand}" IsEnabled="{Binding Tutorial.CanGoBack}" Content="Назад" HorizontalAlignment="Left"/>
+                        <Button Command="{Binding Tutorial.NextCommand}" Content="{Binding Tutorial.NextLabel}" Style="{StaticResource Primary}" HorizontalAlignment="Right" MinWidth="130"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

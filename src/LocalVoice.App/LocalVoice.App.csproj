@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>LocalVoice</AssemblyName>
+    <RootNamespace>LocalVoice.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\LocalVoice.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSelfContained>true</PublishSelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <Trimming>none</Trimming>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+    <SatelliteResourceLanguages>en;ru</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <ProjectReference Include="..\LocalVoice.Core\LocalVoice.Core.csproj" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="Whisper.net" Version="1.8.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.8.1" />
+    <PackageReference Include="Whisper.net.Runtime.NoAvx" Version="1.8.1" />
+    <Resource Include="Assets\LocalVoice.ico" />
+    <Content Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\LICENSE" Link="LICENSE.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <PropertyGroup>
+    <WhisperNoAvxVersion>1.8.1</WhisperNoAvxVersion>
+  </PropertyGroup>
+  <Target Name="EnsureWhisperNoAvxPublishLayout" AfterTargets="Publish" Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <ItemGroup>
+      <_WhisperNoAvxNative Include="$(NuGetPackageRoot)whisper.net.runtime.noavx/$(WhisperNoAvxVersion)/build/win-x64/*.dll" />
+    </ItemGroup>
+    <Error Condition="'@(_WhisperNoAvxNative)' == ''" Text="Whisper.net.Runtime.NoAvx native files were not restored." />
+    <Copy SourceFiles="@(_WhisperNoAvxNative)" DestinationFolder="$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))runtimes/noavx/win-x64/" SkipUnchangedFiles="true" />
+  </Target>
+</Project>
