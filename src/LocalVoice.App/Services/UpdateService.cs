@@ -23,7 +23,7 @@ public sealed partial class UpdateService : ObservableObject, IAsyncDisposable
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly CancellationTokenSource _cts = new();
     private readonly List<Task> _loops = [];
-    private Func<bool>? _canInstall;
+    private Func<bool>? _canInstallPredicate;
     private bool _installRequested, _disposed;
 
     [ObservableProperty] private string _statusText = "Обновления не проверялись";
@@ -50,7 +50,7 @@ public sealed partial class UpdateService : ObservableObject, IAsyncDisposable
 
     public void Start(Func<bool> canInstall)
     {
-        _canInstall = canInstall;
+        _canInstallPredicate = canInstall;
         _loops.Add(Task.Run(() => CheckLoopAsync(_cts.Token)));
         _loops.Add(Task.Run(() => InstallLoopAsync(_cts.Token)));
     }
@@ -86,7 +86,7 @@ public sealed partial class UpdateService : ObservableObject, IAsyncDisposable
     {
         if (_disposed || _installRequested || !IsReady || PendingInstallerPath is null) return;
         if (!_settings.Current.AutoUpdate || !_settings.Current.AutoInstallUpdates) return;
-        if (_canInstall?.Invoke() != true) return;
+        if (_canInstallPredicate?.Invoke() != true) return;
         RequestInstall();
     }
     public bool RequestInstall()
