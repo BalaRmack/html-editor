@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Windows.Media.Brushes;
 using System.Windows.Threading;
 namespace LocalVoice.App.Controls;
 
