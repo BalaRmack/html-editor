@@ -9,10 +9,10 @@
 
 ## Скачать
 
-Готовые файлы публикуются в [GitHub Releases](https://github.com/BalaRmack/html-editor/releases/tag/v1.2.0):
+Готовые файлы публикуются в [GitHub Releases](https://github.com/BalaRmack/html-editor/releases/tag/v1.2.1):
 
-- `LocalVoice-1.2.0-win-x64-setup.exe` — per-user установщик, без обязательных прав администратора.
-- `LocalVoice-1.2.0-win-x64-portable.zip` — self-contained папка, распакуйте и запустите `LocalVoice.exe`.
+- `LocalVoice-1.2.1-win-x64-setup.exe` — per-user установщик, без обязательных прав администратора.
+- `LocalVoice-1.2.1-win-x64-portable.zip` — self-contained папка, распакуйте и запустите `LocalVoice.exe`.
 - `*.sha256` — контрольные суммы.
 
 Модели **не входят** в установщик. При первом запуске откройте раздел **Модели** и скачайте рекомендуемую `Whisper Small · Q5_1` (~181 МБ). Это единственная сетевая операция по умолчанию.
@@ -96,7 +96,7 @@ cd html-editor
 git checkout arena/e21a0934-html-editor
 
 # Полный цикл: restore → build → test → publish → installer
-./scripts/build.ps1 -Task all -Version 1.2.0
+./scripts/build.ps1 -Task all -Version 1.2.1
 
 # Без Inno Setup
 ./scripts/build.ps1 -Task all -SkipInstaller
@@ -112,7 +112,7 @@ git checkout arena/e21a0934-html-editor
 Результаты:
 
 - `artifacts/publish/win-x64/LocalVoice.exe`
-- `artifacts/installer/LocalVoice-1.2.0-win-x64-setup.exe`
+- `artifacts/installer/LocalVoice-1.2.1-win-x64-setup.exe`
 - `artifacts/tests/*.trx`
 - `artifacts/publish/win-x64/licenses/` — собранные лицензии NuGet-пакетов.
 
@@ -120,10 +120,10 @@ git checkout arena/e21a0934-html-editor
 
 ```powershell
 dotnet restore LocalVoice.sln -p:EnableWindowsTargeting=true --use-lock-file
-dotnet build LocalVoice.sln -c Release --no-restore -p:Version=1.2.0
+dotnet build LocalVoice.sln -c Release --no-restore -p:Version=1.2.1
 dotnet test tests/LocalVoice.Core.Tests -c Release --no-build
 dotnet publish src/LocalVoice.App -c Release -r win-x64 --self-contained true `
-  -o artifacts/publish/win-x64 -p:Version=1.2.0 -p:PublishSingleFile=false -p:DebugType=none
+  -o artifacts/publish/win-x64 -p:Version=1.2.1 -p:PublishSingleFile=false -p:DebugType=none
 ```
 
 ### CI

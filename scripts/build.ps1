@@ -2,7 +2,7 @@
 param(
     [ValidateSet('restore','build','test','publish','installer','all')]
     [string]$Task = 'all',
-    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '1.2.0',
+    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '1.2.1',
     [string]$Configuration = 'Release',
     [string]$Runtime = 'win-x64',
     [string]$InnoCompiler,
@@ -43,6 +43,7 @@ if ($Task -in @('restore','all')) { Invoke-DotNet @('restore', $solution, '-p:En
 if ($Task -in @('build','all')) { Invoke-DotNet @('build', $solution, '-c', $Configuration, '--no-restore', "-p:Version=$Version") }
 if ($Task -in @('test','all')) {
     Invoke-DotNet @('test', (Join-Path $root 'tests/LocalVoice.Core.Tests/LocalVoice.Core.Tests.csproj'), '-c', $Configuration, '--no-build', '--logger', 'trx', '--results-directory', (Join-Path $artifacts 'tests'))
+    Invoke-DotNet @('test', (Join-Path $root 'tests/LocalVoice.App.Tests/LocalVoice.App.Tests.csproj'), '-c', $Configuration, '--no-build', '--logger', 'trx', '--results-directory', (Join-Path $artifacts 'tests'))
 }
 if ($Task -in @('publish','all')) {
     if (Test-Path -LiteralPath $publish) { Remove-Item -LiteralPath $publish -Recurse -Force }

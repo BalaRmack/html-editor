@@ -5,13 +5,13 @@ using NAudio.Wave;
 using NAudio.CoreAudioApi;
 namespace LocalVoice.App.Services;
 
-public sealed class MicrophoneCaptureSession : IAsyncDisposable
+public sealed class MicrophoneCaptureSession : IAudioCaptureSession
 {
     private readonly WasapiCapture _capture;
     private readonly MMDevice _owner;
     private readonly CancellationTokenSource _cts = new();
     private readonly TaskCompletionSource _stopped = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private int _overflow;
+    private int _overflow, _disposed;
     public string DeviceName { get; }
     public ChannelReader<AudioFrame> Frames => _frames.Reader;
     private readonly Channel<AudioFrame> _frames = Channel.CreateBounded<AudioFrame>(new BoundedChannelOptions(256)
@@ -62,6 +62,7 @@ public sealed class MicrophoneCaptureSession : IAsyncDisposable
     }
     public async Task StopAsync()
     {
+        if (Volatile.Read(ref _disposed) != 0) return;
         if (_cts.IsCancellationRequested) { await _stopped.Task.WaitAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false); return; }
         _cts.Cancel();
         try { _capture.StopRecording(); } catch { _stopped.TrySetResult(); }
@@ -70,7 +71,11 @@ public sealed class MicrophoneCaptureSession : IAsyncDisposable
     }
     public async ValueTask DisposeAsync()
     {
-        await StopAsync().ConfigureAwait(false);
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        _cts.Cancel();
+        try { _capture.StopRecording(); } catch { _stopped.TrySetResult(); }
+        try { await _stopped.Task.WaitAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false); }
+        catch (TimeoutException) { _frames.Writer.TryComplete(); }
         _capture.DataAvailable -= OnData; _capture.RecordingStopped -= OnStopped;
         _capture.Dispose(); _owner.Dispose(); _cts.Dispose();
     }

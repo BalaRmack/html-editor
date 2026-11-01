@@ -28,6 +28,8 @@ public sealed class DictationController : IAsyncDisposable
     public event EventHandler? SessionStopping;
     public event EventHandler<string>? SessionFailed;
     public string? LastSessionError { get; private set; }
+    public string RecognitionStatus { get; private set; } = "Слушаю…";
+    public event EventHandler? RecognitionStatusChanged;
     public DictationController(WhisperEngine engine, ModelManager models, MicrophoneService microphones, SettingsStore settings, IAppLog log)
     { _settings = settings; _models = models; _engine = engine; _microphones = microphones; _log = log; }
     public void RememberTarget(IntPtr hwnd) { if (hwnd != IntPtr.Zero) Target = hwnd; }
@@ -54,13 +56,19 @@ public sealed class DictationController : IAsyncDisposable
                 await _engine.EnsureLoadedAsync(model, cts.Token).ConfigureAwait(false);
                 var (capture, device, name) = _microphones.CreateCapture(settings.InputDeviceId);
                 var microphone = new MicrophoneCaptureSession(capture, device, name);
-                var session = new DictationSession(microphone, _engine, settings);
-                _session = session;
+                IRecognitionSession? recognition = null;
+                try { recognition = _engine.CreateRecognitionSession(settings.Language, settings.CpuThreads); }
+                catch { await microphone.DisposeAsync().ConfigureAwait(false); throw; }
+                var session = new DictationSession(microphone, recognition!, settings);
+                _session = session; RecognitionStatus = "Слушаю…";
                 session.Level += (_, value) => Level?.Invoke(this, value);
                 session.TextChanged += (_, value) => LiveTextChanged?.Invoke(this, value);
+                session.StatusChanged += (_, status) => { RecognitionStatus = status; RecognitionStatusChanged?.Invoke(this, EventArgs.Empty); };
                 session.Faulted += (_, ex) => { FailSession(ex, "Capture/recognition"); _ = Task.Run(StopAsync); };
                 session.Start(); ActiveDevice = name; SetState(DictationState.Listening);
-                _log.Info("Dictation started");
+                _log.Info($"Dictation started; device={name}; model={settings.ModelId}; runtime={_engine.LoadedRuntime}");
+                if (_engine.IsCompatibilityRuntime && settings.ModelId != "base-q5_1")
+                    Notice?.Invoke(this, "Совместимый режим без AVX: Small может отвечать с задержкой. Для быстрой диктовки выберите Base в разделе «Модели».");
             }
             catch (OperationCanceledException) { await CleanupSessionAsync().ConfigureAwait(false); SessionStopping?.Invoke(this, EventArgs.Empty); SetState(DictationState.Idle); }
             catch (Exception ex)
@@ -84,6 +92,7 @@ public sealed class DictationController : IAsyncDisposable
             DictationResult? result = null;
             try { result = await session.FinishAsync().ConfigureAwait(false); }
             catch (Exception ex) { ReportError(ex, "Finish dictation"); }
+            _log.Info($"Dictation diagnostics: {session.DiagnosticSummary}; textLength={result?.Text.Length ?? 0}");
             await CleanupSessionAsync().ConfigureAwait(false);
             SessionStopping?.Invoke(this, EventArgs.Empty); SetState(DictationState.Idle);
             if (result is { Text.Length: > 0 })

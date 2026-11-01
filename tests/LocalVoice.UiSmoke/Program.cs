@@ -52,6 +52,12 @@ internal static class Program
             if (overlay.Width > 370 || overlay.Height > 110)
                 throw new InvalidOperationException($"Overlay is not compact: {overlay.Width}x{overlay.Height}");
             Save(overlay, Path.Combine(outDir, "overlay.png"));
+            services.ViewModel.IsOverlayExpanded = false;
+            services.ViewModel.LiveText = "Привет, это проверка."; Pump();
+            if (!services.ViewModel.IsOverlayExpanded || overlay.Height < 220)
+                throw new InvalidOperationException("Live text must expand the compact overlay");
+            Save(overlay, Path.Combine(outDir, "overlay-live-text.png"));
+            services.ViewModel.IsOverlayExpanded = false; services.ViewModel.LiveText = ""; Pump();
             overlay.ShowFailure("Тестовая ошибка: микрофон недоступен."); Pump();
             if (!overlay.IsVisible || !services.ViewModel.HasOverlayError)
                 throw new InvalidOperationException("Overlay error disappeared instead of staying visible.");

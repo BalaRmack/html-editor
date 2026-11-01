@@ -41,14 +41,14 @@ public sealed class UtteranceAccumulator
                 Append(previous);
                 if (previous.Rms > Threshold * 0.6) _voicedSeconds += previous.Seconds;
             }
-            _preRollSeconds = 0; _sincePartial = _preRoll.Sum(x => x.Seconds);
+            _sincePartial = _preRollSeconds; _preRollSeconds = 0;
             return new(true, false, false);
         }
         Append(frame);
         _silenceSeconds = voiced ? 0 : _silenceSeconds + duration;
         if (frame.Rms > Threshold * 0.6) _voicedSeconds += duration;
         _sincePartial += duration;
-        var final = (_silenceSeconds >= 0.65 && _voicedSeconds >= 0.18) || BufferedSeconds >= 12;
+        var final = (_silenceSeconds >= 0.45 && _voicedSeconds >= 0.18) || BufferedSeconds >= 12;
         var partial = !final && _sincePartial >= 0.8 && BufferedSeconds >= 0.7;
         if (partial) _sincePartial = 0;
         return new(false, partial, final);

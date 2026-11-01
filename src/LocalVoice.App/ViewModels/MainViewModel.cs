@@ -50,7 +50,7 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isHistoryEnabled;
     [ObservableProperty] private bool _isOverlayExpanded;
     [ObservableProperty] private string _overlayError = "";
-    public string Version => typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.2.0";
+    public string Version => typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.2.1";
     public bool IsBusy => Controller.State != DictationState.Idle;
     public bool IsListening => Controller.State == DictationState.Listening;
     public bool IsTesting => Controller.IsTesting;
@@ -62,7 +62,7 @@ public sealed partial class MainViewModel : ObservableObject
     public bool ShowOverlayNormal => !HasOverlayError;
     public bool ShowExport => true;
     public string StartLabel => Controller.State switch { DictationState.Loading => "Загружаю модель…", DictationState.Listening => "Остановить", DictationState.Finishing => "Завершаю…", _ => "Начать прослушивание" };
-    public string OverlayStatus => Controller.State switch { DictationState.Loading => "Загружаю модель…", DictationState.Finishing => "Завершаю…", _ => "Слушаю…" };
+    public string OverlayStatus => Controller.State switch { DictationState.Loading => "Загружаю модель…", DictationState.Finishing => "Завершаю…", DictationState.Listening => Controller.RecognitionStatus, _ => "Слушаю…" };
     public string MicrophoneSummary => Controller.ActiveDevice ?? (SettingsStore.Current.InputDeviceId.Length == 0 ? "Системный микрофон" : "Выбранный микрофон");
     public string ModelSummary => ModelCatalog.ById[SettingsStore.Current.ModelId].Name;
     public string LanguageSummary => Settings.Language.Name;
@@ -82,6 +82,7 @@ public sealed partial class MainViewModel : ObservableObject
         Tutorial.Completed += (_, _) => _ = CompleteTutorialAsync();
         Tutorial.NavigateRequested += (_, tab) => Navigate(tab);
         Controller.SessionFailed += (_, message) => OnUi(() => { OverlayError = message; IsOverlayExpanded = true; });
+        Controller.RecognitionStatusChanged += (_, _) => OnUi(() => { OnPropertyChanged(nameof(OverlayStatus)); if (IsListening) Status = Controller.RecognitionStatus; });
         foreach (var model in ModelCatalog.All) ModelItems.Add(new(model, this));
         Controller.StateChanged += (_, _) => OnUi(() => { RefreshState(); if (!IsBusy) LiveText = ""; if (Controller.State == DictationState.Loading) { OverlayError = ""; IsOverlayExpanded = false; } });
         Controller.Level += (_, value) => OnUi(() => Level = Math.Clamp(Math.Sqrt(value) * 2.4, 0, 1));

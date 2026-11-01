@@ -17,6 +17,7 @@ public sealed class WhisperEngine : IAsyncDisposable
     private readonly CpuRuntimePreference _cpuRuntime;
     public string? LoadedModelId => _loadedId;
     public string? LoadedRuntime => RuntimeOptions.LoadedLibrary?.ToString();
+    public bool IsCompatibilityRuntime => RuntimeOptions.LoadedLibrary == RuntimeLibrary.CpuNoAvx;
     public WhisperEngine(ModelManager models, IAppLog log, CpuRuntimePreference cpuRuntime = CpuRuntimePreference.Automatic) { _models = models; _log = log; _cpuRuntime = cpuRuntime; }
     public async Task EnsureLoadedAsync(ModelDescriptor model, CancellationToken ct)
     {
@@ -44,6 +45,8 @@ public sealed class WhisperEngine : IAsyncDisposable
         }
         finally { _loadGate.Release(); }
     }
+    public IRecognitionSession CreateRecognitionSession(string language, int threads) =>
+        new WhisperRecognitionSession(CreateProcessor(language, threads), this);
     public WhisperProcessor CreateProcessor(string language, int threads)
     {
         if (_factory is null) throw new InvalidOperationException("Модель ещё не загружена.");
@@ -65,6 +68,11 @@ public sealed class WhisperEngine : IAsyncDisposable
             if (clean.Length > 0) text = TranscriptText.Join(text, clean);
         }
         return text;
+    }
+    private sealed class WhisperRecognitionSession(WhisperProcessor processor, WhisperEngine engine) : IRecognitionSession
+    {
+        public Task<string> TranscribeAsync(float[] pcm, CancellationToken ct) => engine.TranscribeAsync(processor, pcm, ct);
+        public ValueTask DisposeAsync() => processor.DisposeAsync();
     }
     public async Task UnloadAsync()
     {

@@ -19,7 +19,7 @@ public sealed class MicrophoneService
         try
         {
             device = string.IsNullOrEmpty(deviceId)
-                ? enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications)
+                ? enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console)
                 : enumerator.GetDevice(deviceId);
             if (device.State != DeviceState.Active) throw new InvalidOperationException("Микрофон отключён. Выберите другое устройство.");
             var name = device.FriendlyName;
