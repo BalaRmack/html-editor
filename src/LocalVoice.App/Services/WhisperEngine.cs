@@ -1,3 +1,4 @@
+using System.IO;
 using LocalVoice.Core;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
